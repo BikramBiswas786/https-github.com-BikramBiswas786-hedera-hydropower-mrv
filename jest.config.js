@@ -1,6 +1,21 @@
-﻿module.exports = {
+module.exports = {
+  testEnvironment: 'node',
   testMatch: [
-    '**/tests/hedera-integration.test.js',
-    '**/tests/configuration-validator.test.js'
-  ]
+    '**/tests/**/*.test.js'
+  ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/code/'
+  ],
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '/tests/',
+    '/code/'
+  ],
+  collectCoverageFrom: [
+    'src/**/*.js',
+    '!src/**/*.test.js'
+  ],
+  verbose: true,
+  testTimeout: 30000
 };
