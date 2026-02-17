@@ -29,7 +29,7 @@ async function createRecToken() {
   client.setOperator(OPERATOR_ID, operatorKey);
   
   // INCREASED FEE FOR TOKEN CREATION (0.5 HBAR vs 0.1 HBAR for DID)
-  client.setDefaultMaxTransactionFee(new Hbar(5));  // 5 HBAR max
+  client.setDefaultMaxTransactionFee(new Hbar(20));  // 5 HBAR max
 
   console.log('Step 1: Initializing Hedera Client...');
   console.log(`✓ Connected to Hedera Testnet`);

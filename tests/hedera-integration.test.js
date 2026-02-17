@@ -13,7 +13,7 @@ describe('Hedera Integration', () => {
 
   beforeEach(() => {
     mockClient = Client.forTestnet();
-    mockClient.setOperator('0.0.123456', 'test-key');
+    // Skip client setup - these are unit tests that don't call Hedera
   });
 
   describe('Topic Operations', () => {
