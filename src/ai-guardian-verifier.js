@@ -200,6 +200,7 @@ class AIGuardianVerifier {
 
   /**
    * Process batch with ACTUAL validation (not simplified)
+   * ✅ FIXED: Using detector.checkAll() instead of detector.validate()
    */
   processBatch(readings) {
     if (!Array.isArray(readings)) {
@@ -207,8 +208,8 @@ class AIGuardianVerifier {
     }
 
     return readings.map(reading => {
-      // Run actual validation through AnomalyDetector
-      const validationResults = this.detector.validate(reading);
+      // ✅ FIX: Use checkAll() method from AnomalyDetector
+      const validationResults = this.detector.checkAll(reading);
 
       return this.generateAttestation(reading, validationResults);
     });
