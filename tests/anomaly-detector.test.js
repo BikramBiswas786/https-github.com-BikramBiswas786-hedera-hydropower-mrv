@@ -5,7 +5,7 @@
  */
 
 const test = require('tape');
-const AnomalyDetector = require('../../src/anomaly-detector');
+const AnomalyDetector = require('../src/anomaly-detector');
 
 // ============================================================================
 // PHYSICS CONSTRAINTS TESTS

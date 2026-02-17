@@ -5,7 +5,7 @@
  */
 
 const test = require('tape');
-const AIGuardianVerifier = require('../../src/ai-guardian-verifier');
+const AIGuardianVerifier = require('../src/ai-guardian-verifier');
 
 // ============================================================================
 // TRUST SCORE CALCULATION TESTS

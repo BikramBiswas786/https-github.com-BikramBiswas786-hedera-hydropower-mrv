@@ -5,7 +5,7 @@
  */
 
 const test = require('tape');
-const VerifierAttestation = require('../../src/verifier-attestation');
+const VerifierAttestation = require('../src/verifier-attestation');
 
 // ============================================================================
 // ATTESTATION STRUCTURE TESTS

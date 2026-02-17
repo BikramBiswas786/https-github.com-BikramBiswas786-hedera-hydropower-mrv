@@ -5,10 +5,10 @@
  */
 
 const test = require('tape');
-const Workflow = require('../../src/workflow');
-const AnomalyDetector = require('../../src/anomaly-detector');
-const AIGuardianVerifier = require('../../src/ai-guardian-verifier');
-const VerifierAttestation = require('../../src/verifier-attestation');
+const Workflow = require('../src/workflow');
+const AnomalyDetector = require('../src/anomaly-detector');
+const AIGuardianVerifier = require('../src/ai-guardian-verifier');
+const VerifierAttestation = require('../src/verifier-attestation');
 
 // ============================================================================
 // WORKFLOW INITIALIZATION TESTS
