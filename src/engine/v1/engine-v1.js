@@ -8,19 +8,53 @@ const {
 } = require('@hashgraph/sdk');
 require('dotenv').config();
 
-const OPERATOR_ID = process.env.HEDERA_OPERATOR_ID;
-const OPERATOR_KEY_STR = process.env.HEDERA_OPERATOR_KEY;
-const AUDIT_TOPIC_ID = process.env.AUDIT_TOPIC_ID;
 const EF_GRID = parseFloat(process.env.EF_GRID || "0.8");
 
-if (!OPERATOR_ID || !OPERATOR_KEY_STR || !AUDIT_TOPIC_ID) {
-  throw new Error("Missing HEDERA_OPERATOR_ID / HEDERA_OPERATOR_KEY / AUDIT_TOPIC_ID in .env");
+// ============================================
+// LAZY HEDERA CLIENT INITIALIZATION
+// ============================================
+
+let _client = null;
+let _operatorKey = null;
+let _hederaAvailable = null;
+
+function getClient() {
+  if (_hederaAvailable === false) {
+    return null;
+  }
+
+  if (_client) {
+    return { client: _client, operatorKey: _operatorKey };
+  }
+
+  const OPERATOR_ID = process.env.HEDERA_OPERATOR_ID;
+  const OPERATOR_KEY_STR = process.env.HEDERA_OPERATOR_KEY;
+  const AUDIT_TOPIC_ID = process.env.AUDIT_TOPIC_ID;
+
+  if (!OPERATOR_ID || !OPERATOR_KEY_STR || !AUDIT_TOPIC_ID) {
+    console.warn('[EngineV1] Hedera credentials missing, running in mock mode');
+    _hederaAvailable = false;
+    return null;
+  }
+
+  try {
+    _operatorKey = PrivateKey.fromString(OPERATOR_KEY_STR);
+    _client = Client.forTestnet();
+    _client.setOperator(AccountId.fromString(OPERATOR_ID), _operatorKey);
+    _client.setDefaultMaxTransactionFee(new Hbar(2));
+    _hederaAvailable = true;
+    console.log('[EngineV1] Hedera client initialized successfully');
+    return { client: _client, operatorKey: _operatorKey };
+  } catch (error) {
+    console.warn(`[EngineV1] Hedera init failed: ${error.message}`);
+    _hederaAvailable = false;
+    return null;
+  }
 }
 
-const operatorKey = PrivateKey.fromString(OPERATOR_KEY_STR);
-const client = Client.forTestnet();
-client.setOperator(AccountId.fromString(OPERATOR_ID), operatorKey);
-client.setDefaultMaxTransactionFee(new Hbar(2));
+function getAuditTopicId() {
+  return process.env.AUDIT_TOPIC_ID;
+}
 
 // ============================================
 // ENHANCED AI CHECKS - GRADUATED SCORING
@@ -426,32 +460,43 @@ class EngineV1 {
       }
     };
 
-    // Publish to HCS
-    try {
-      const topicId = TopicId.fromString(AUDIT_TOPIC_ID);
-      const message = Buffer.from(JSON.stringify(attestation));
+    // Lazy init Hedera client
+    const hedera = getClient();
+    const auditTopicId = getAuditTopicId();
 
-      const tx = await new TopicMessageSubmitTransaction()
-        .setTopicId(topicId)
-        .setMessage(message)
-        .freezeWith(client)
-        .sign(operatorKey);
+    // Try HCS publish if available
+    let transactionId = `mock-${Date.now()}`;
+    let status = 'MOCK';
 
-      const resp = await tx.execute(client);
-      const receipt = await resp.getReceipt(client);
+    if (hedera && auditTopicId) {
+      try {
+        const topicId = TopicId.fromString(auditTopicId);
+        const message = Buffer.from(JSON.stringify(attestation));
 
-      // Update history
-      history.push(telemetry.readings);
+        const tx = await new TopicMessageSubmitTransaction()
+          .setTopicId(topicId)
+          .setMessage(message)
+          .freezeWith(hedera.client)
+          .sign(hedera.operatorKey);
 
-      return {
-        attestation,
-        transactionId: resp.transactionId.toString(),
-        status: receipt.status.toString()
-      };
-    } catch (error) {
-      console.error(`✗ Hedera HCS submission failed: ${error.message}`);
-      throw error;
+        const resp = await tx.execute(hedera.client);
+        const receipt = await resp.getReceipt(hedera.client);
+
+        transactionId = resp.transactionId.toString();
+        status = receipt.status.toString();
+      } catch (error) {
+        console.warn(`[EngineV1] HCS submission failed: ${error.message}`);
+      }
     }
+
+    // Update history
+    history.push(telemetry.readings);
+
+    return {
+      attestation,
+      transactionId,
+      status
+    };
   }
 
   async verifyBatch(telemetryArray) {
@@ -520,9 +565,14 @@ async function main() {
       console.log("RECs issued (tCO2):", result.attestation.calculations.RECs_issued);
       console.log("Hedera TX:", result.transactionId);
       console.log("Status:", result.status);
-      console.log("Audit Topic:", AUDIT_TOPIC_ID);
+      console.log("Audit Topic:", getAuditTopicId() || 'N/A');
     } catch (err) {
       console.error("Submission failed:", err.message);
+    }
+
+    const hedera = getClient();
+    if (hedera && hedera.client) {
+      await hedera.client.close();
     }
   } else {
     console.log("Usage:");
@@ -530,8 +580,6 @@ async function main() {
     console.log("Example:");
     console.log("node engine-v1.js submit TURBINE-1 2.5 45 156 7.2");
   }
-
-  await client.close();
 }
 
 if (require.main === module) {
