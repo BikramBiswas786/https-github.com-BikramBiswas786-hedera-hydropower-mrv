@@ -9,7 +9,7 @@ const path = require('path');
 
 class Logger {
   constructor(options = {}) {
-    this.logDir = options.logDir || path.join(__dirname, '../logs');
+    this.logDir = options.logDir || path.join(__dirname, '../../../logs');
     this.logLevel = options.logLevel || 'info';
     this.maxFileSize = options.maxFileSize || 10 * 1024 * 1024; // 10MB
     this.maxFiles = options.maxFiles || 5;
