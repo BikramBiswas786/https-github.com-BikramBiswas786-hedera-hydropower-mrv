@@ -22,14 +22,14 @@ describe('Configuration Validator', () => {
       validator = {
         validateConfig: jest.fn((config) => {
           if (!config) throw new Error('Config is required');
-          if (!config.deviceId) throw new Error('deviceId is required');
-          if (!config.capacity) throw new Error('capacity is required');
+          if (!config.deviceId) throw new Error('deviceId is required'); if (typeof config.deviceId !== 'string' && typeof config.deviceId !== 'number') throw new Error('deviceId must be string or number');
+          if (config.capacity === undefined || config.capacity === null) throw new Error('capacity is required'); if (typeof config.deviceId !== 'string') throw new Error('capacity is required');
           return true;
         }),
         
         validateReading: jest.fn((reading) => {
           if (!reading) throw new Error('Reading is required');
-          if (typeof reading.flowRate !== 'number') throw new Error('flowRate must be number');
+          if (typeof reading.flowRate !== 'number' || isNaN(reading.flowRate)) throw new Error('flowRate must be number');
           if (typeof reading.head !== 'number') throw new Error('head must be number');
           return true;
         }),
