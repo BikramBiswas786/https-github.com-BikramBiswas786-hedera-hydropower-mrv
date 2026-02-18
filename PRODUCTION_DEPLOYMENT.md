@@ -6,7 +6,7 @@ This guide provides complete production deployment instructions for investors, a
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 ### System Requirements
 - **Node.js**: v18+ (LTS recommended)
