@@ -1,6 +1,6 @@
 # Production Deployment Guide - Hedera Hydropower MRV
 
-## 🚀 Quick Start - Investment Ready
+##  Quick Start - Investment Ready
 
 This guide provides complete production deployment instructions for investors, auditors, and operators.
 
@@ -23,7 +23,7 @@ This guide provides complete production deployment instructions for investors, a
 
 ---
 
-## 🔧 Installation & Setup
+##  Installation & Setup
 
 ### Step 1: Clone Repository
 
@@ -83,7 +83,7 @@ HEDERA_NETWORK=testnet  # or 'mainnet'
 
 ---
 
-## ✅ Verification & Testing
+## Verification & Testing
 
 ### Step 4: Run Complete Test Suite
 
@@ -128,7 +128,7 @@ npm test -- --coverage
 
 ---
 
-## 🎯 Production Usage
+##  Production Usage
 
 ### Submitting Telemetry Data
 
@@ -355,7 +355,7 @@ jobs:
 
 ---
 
-## 📞 Support & Maintenance
+##  Support & Maintenance
 
 ### Health Checks
 
@@ -386,7 +386,7 @@ node scripts/restore-attestations.js --file backup-2026-02-18.json
 
 ---
 
-## 🎓 Training & Documentation
+##  Training & Documentation
 
 ### Additional Resources
 - [API Documentation](./docs/API.md)
@@ -401,7 +401,7 @@ node scripts/restore-attestations.js --file backup-2026-02-18.json
 
 ---
 
-## ✨ Investment-Ready Checklist
+##  Investment-Ready Checklist
 
 - [x] **Complete test suite** with 106+ tests passing
 - [x] **Production-grade verification** engine with 5-tier validation
@@ -416,7 +416,7 @@ node scripts/restore-attestations.js --file backup-2026-02-18.json
 
 ---
 
-## 📊 KPIs & Metrics
+##  KPIs & Metrics
 
 ### Performance Metrics
 - **Verification Latency**: <500ms per reading
@@ -432,7 +432,7 @@ node scripts/restore-attestations.js --file backup-2026-02-18.json
 
 ---
 
-## 🌍 Mainnet Deployment
+##  Mainnet Deployment
 
 ### Pre-Mainnet Checklist
 
@@ -460,7 +460,7 @@ node scripts/restore-attestations.js --file backup-2026-02-18.json
 
 ---
 
-## 📄 License & Compliance
+##  License & Compliance
 
 - **License**: MIT
 - **Compliance**: ACM0002 methodology
@@ -469,6 +469,6 @@ node scripts/restore-attestations.js --file backup-2026-02-18.json
 
 ---
 
-**Production Ready** ✅  
+**Production Ready**   
 **Last Updated**: February 18, 2026  
 **Version**: 1.1.0
