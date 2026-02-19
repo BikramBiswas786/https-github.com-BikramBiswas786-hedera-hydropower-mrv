@@ -52,7 +52,7 @@ module.exports = (req, res) => {
         hashscanToken:   `https://hashscan.io/testnet/token/${REC_TOKEN_ID}`,
         hashscanAccount: `https://hashscan.io/testnet/account/${HEDERA_OPERATOR_ID}`
       },
-      tests:  { suites: 9, total: 234, passing: 234 },
+      tests:  { suites: 9, total: 224, passing: 224 },
       status: 'operational'
     });
   }
@@ -150,7 +150,7 @@ module.exports = (req, res) => {
   <div class="card" style="margin-top:1.5rem">
     <h2>&#x1f4ca; System Stats</h2>
     <div class="grid">
-      <div class="stat"><div class="stat-val">234</div><div class="stat-label">Tests Passing</div></div>
+      <div class="stat"><div class="stat-val">224</div><div class="stat-label">Tests Passing</div></div>
       <div class="stat"><div class="stat-val">9</div><div class="stat-label">Test Suites</div></div>
       <div class="stat"><div class="stat-val">&lt;5ms</div><div class="stat-label">Per Verification</div></div>
       <div class="stat"><div class="stat-val">50K</div><div class="stat-label">Plant TAM</div></div>
