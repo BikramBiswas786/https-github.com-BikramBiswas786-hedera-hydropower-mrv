@@ -1,0 +1,151 @@
+name: ML Model Training Pipeline
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      dataset_version:
+        description: 'Training dataset version'
+        required: false
+        default: 'v0.1.0'
+  
+  # Weekly automatic retraining
+  schedule:
+    - cron: '0 0 * * 0'  # Every Sunday at midnight UTC
+
+jobs:
+  generate-data:
+    runs-on: ubuntu-latest
+    name: Generate Training Data
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: feature/ml-integration
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Generate synthetic data
+        run: |
+          cd ml/data
+          node generate_synthetic.js
+      
+      - name: Upload training data
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-data
+          path: ml/data/training_v0.1.0.json
+          retention-days: 90
+
+  train-model:
+    runs-on: ubuntu-latest
+    needs: generate-data
+    name: Train ML Model
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: feature/ml-integration
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Download training data
+        uses: actions/download-artifact@v4
+        with:
+          name: training-data
+          path: ml/data
+      
+      - name: Install dependencies
+        run: |
+          pip install -r ml/requirements.txt
+      
+      - name: Train model
+        run: |
+          python3 ml/scripts/train.py \
+            --data ml/data/training_v0.1.0.json \
+            --output ml/models/isolation_forest_v0.1.pkl \
+            --metrics ml/models/model_metrics.json
+      
+      - name: Calculate model hash
+        id: model-hash
+        run: |
+          HASH=$(sha256sum ml/models/isolation_forest_v0.1.pkl | awk '{print $1}')
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+          echo "Model SHA256: $HASH"
+      
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-model
+          path: |
+            ml/models/isolation_forest_v0.1.pkl
+            ml/models/model_metrics.json
+          retention-days: 90
+      
+      - name: Publish metrics
+        run: |
+          echo "## ML Training Metrics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat ml/models/model_metrics.json | jq -r '
+            "**Model Version:** \(.model_version)\n" +
+            "**Training Date:** \(.training_date)\n" +
+            "**Dataset:** \(.dataset_version)\n" +
+            "**Samples:** \(.training_samples)\n\n" +
+            "### Performance Metrics\n" +
+            "- **Accuracy:** \(.metrics.accuracy * 100 | round)%\n" +
+            "- **Precision:** \(.metrics.precision * 100 | round)%\n" +
+            "- **Recall:** \(.metrics.recall * 100 | round)%\n" +
+            "- **F1-Score:** \(.metrics.f1_score * 100 | round)%\n" +
+            "- **False Positive Rate:** \(.metrics.false_positive_rate * 100 | round)%\n\n" +
+            "### Model Hash\n" +
+            "```\n\(.dataset_sha256)\n```"
+          ' >> $GITHUB_STEP_SUMMARY
+
+  test-model:
+    runs-on: ubuntu-latest
+    needs: train-model
+    name: Test ML Integration
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: feature/ml-integration
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Download trained model
+        uses: actions/download-artifact@v4
+        with:
+          name: trained-model
+          path: ml/models
+      
+      - name: Install dependencies
+        run: |
+          npm install
+          pip install -r ml/requirements.txt
+      
+      - name: Run ML integration tests
+        run: |
+          npm test -- ml/tests/ml-integration.test.js
+      
+      - name: Test model inference
+        run: |
+          echo '{"flowRate": 2.5, "head": 45, "generatedKwh": 900, "pH": 7.2, "turbidity": 10, "temperature": 18}' > test_reading.json
+          python3 ml/scripts/predict.py ml/models/isolation_forest_v0.1.pkl "$(cat test_reading.json)"
