@@ -26,7 +26,7 @@ module.exports = {
     '!src/**/*.min.js'
   ],
 
-  coverageThresholds: {
+  coverageThreshold: {
     global: {
       lines: 70,
       functions: 70,
