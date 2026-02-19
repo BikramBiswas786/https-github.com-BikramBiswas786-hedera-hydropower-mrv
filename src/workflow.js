@@ -110,8 +110,8 @@ class Workflow {
           headHeight_m: telemetry.head || telemetry.headHeight_m || 0,
           generatedKwh: telemetry.generatedKwh || 0,
           pH: telemetry.pH || 7.0,
-          turbidity_ntu: telemetry.turbidity_ntu || 10,
-          temperature_celsius: telemetry.temperature_celsius || 20,
+          turbidity_ntu: telemetry.turbidity_ntu || telemetry.turbidity || 10,
+          temperature_celsius: telemetry.temperature_celsius || telemetry.temperature || 20,
           efficiency: telemetry.efficiency || 0.85
         }
       };
@@ -193,6 +193,7 @@ class Workflow {
     );
 
     return {
+      success: true,
       projectId: this.projectId,
       deviceId: this.deviceId,
       reportDate: new Date().toISOString(),
