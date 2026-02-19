@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "hedera-hydropower-mrv",
   "builds": [
     {
       "src": "api/index.js",
@@ -16,12 +15,5 @@
       "src": "/",
       "dest": "/api/index.js"
     }
-  ],
-  "env": {
-    "HEDERA_OPERATOR_ID": "@hedera_operator_id",
-    "HEDERA_OPERATOR_KEY": "@hedera_operator_key",
-    "AUDIT_TOPIC_ID": "@audit_topic_id",
-    "REC_TOKEN_ID": "@rec_token_id",
-    "EF_GRID": "0.8"
-  }
+  ]
 }
