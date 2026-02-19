@@ -119,12 +119,25 @@ class Workflow {
       // Verify using EngineV1
       const result = await this.engine.verifyAndPublish(telemetryPacket);
       
-      // Store reading
-      this.readings.push({
+      // Store reading with attestation
+      const reading = {
         ...telemetry,
         attestation: result.attestation,
         timestamp: telemetryPacket.timestamp
-      });
+      };
+      this.readings.push(reading);
+      
+      // Also store in attestation store for export/import functionality
+      if (this.attestation && result.attestation) {
+        this.attestation.createAttestation(
+          result.attestation.deviceId,
+          telemetryPacket.timestamp,
+          result.attestation.verificationStatus,
+          result.attestation.trustScore,
+          result.attestation.checks,
+          result.attestation.calculations
+        );
+      }
 
       return {
         success: true,
@@ -270,6 +283,36 @@ class Workflow {
       };
     } catch (error) {
       console.error('Token creation failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Mint REC tokens based on verified emission reductions
+   * @param {number} amount - Amount of tokens to mint
+   * @param {string} attestationId - Attestation ID for audit trail
+   * @returns {Object} Minting result
+   */
+  async mintRECs(amount, attestationId) {
+    if (!this.tokenId) {
+      // Auto-create token if not exists
+      await this.createRECToken('Hydro REC', 'HREC');
+    }
+
+    try {
+      // Mock token minting
+      // In production, this would use Hedera Token Service TokenMintTransaction
+      const mockTransactionId = `0.0.${Math.floor(Math.random() * 1000000)}@${Date.now() / 1000}.${Math.floor(Math.random() * 1000000000)}`;
+
+      return {
+        success: true,
+        amount,
+        tokenId: this.tokenId,
+        transactionId: mockTransactionId,
+        attestationId
+      };
+    } catch (error) {
+      console.error('Token minting failed:', error);
       throw error;
     }
   }
