@@ -29,7 +29,7 @@
 | Identity | W3C DID on Hedera |
 | SDK | `@hashgraph/sdk` v2 |
 | Runtime | Node.js 18+ |
-| Testing | Jest (234 tests, 9 suites) |
+| Testing | Jest (224 tests, 9 suites) |
 | CI/CD | GitHub Actions |
 | Methodology | ACM0002 (UNFCCC/Verra) |
 | Carbon standard | Verra VCS (integration path) |
@@ -42,7 +42,7 @@
 |-------|-------|
 | GitHub Repo | https://github.com/BikramBiswas786/https-github.com-BikramBiswas786-hedera-hydropower-mrv |
 | Demo Video | *(Record and add YouTube URL before Mar 23)* |
-| Live Demo | *(Deploy and add URL before Mar 23 — see deployment section below)* |
+| Live Demo | https://hydropower-mrv-19feb26.vercel.app/ |
 | Pitch Deck (PDF) | *(Export this HACKATHON.md + README.md as PDF before Mar 23)* |
 
 ---
@@ -101,10 +101,10 @@ Hedera Hydropower MRV makes fraud cryptographically impractical:
 |-----------|--------|-----------|----------|
 | Innovation | 10% | 8/10 | First ACM0002 + HCS + AI trust scoring system on Hedera; no comparable open-source system exists |
 | Feasibility | 10% | 8/10 | Live testnet TXIDs, 234 passing tests, working code, clear business model |
-| Execution | 20% | 6/10 | 234 tests ✅, CI ✅, full src + docs ✅, UI in progress |
+| Execution | 20% | 6/10 | 224 tests ✅, CI ✅, full src + docs ✅, UI in progress |
 | Integration | 15% | 9/10 | Deep HCS + HTS + DID + ACM0002 + `@hashgraph/sdk` v2 |
 | Success | 20% | 8/10 | $50B market, 50K plant TAM, 2.6B HCS TXs/year at scale — see IMPACT.md |
-| Validation | 15% | 6/10 | Live testnet proof, 234 tests, ACM0002 alignment, market research — see VALIDATION.md |
+| Validation | 15% | 6/10 | Live testnet proof, 224 tests, ACM0002 alignment, market research — see VALIDATION.md |
 | Pitch | 10% | 7/10 | This document + README.md + IMPACT.md + VALIDATION.md |
 
 ---
@@ -113,7 +113,7 @@ Hedera Hydropower MRV makes fraud cryptographically impractical:
 
 | Phase | When | What |
 |-------|------|------|
-| MVP | Feb 2026 ✅ | Core engine + Hedera integration + 234 tests |
+| MVP | Feb 2026 ✅ | Core engine + Hedera integration + 224 tests |
 | Demo UI | Mar 2026 | Next.js dashboard: live REC minting + HCS feed |
 | HOL Agent | Mar 2026 | AIGuardianVerifier as HCS-10 agent in HOL Registry |
 | Pilot | Q2 2026 | 3 real hydro plants in West Bengal, India |
