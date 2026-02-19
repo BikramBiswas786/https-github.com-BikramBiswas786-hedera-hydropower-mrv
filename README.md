@@ -12,7 +12,7 @@ Blockchain-verified Measurement, Reporting & Verification (MRV) for run-of-river
 
 ---
 
-## 📋 Hackathon Disclosure (Rules 4.4 + 4.6)
+##  Hackathon Disclosure (Rules 4.4 + 4.6)
 
 > **All code in this repository was written during the official hacking period: 17 February 2026, 10 AM ET – 16 March 2026.**
 >
@@ -22,7 +22,7 @@ Blockchain-verified Measurement, Reporting & Verification (MRV) for run-of-river
 
 ---
 
-## 🎯 What Problem Does This Solve?
+##  What Problem Does This Solve?
 
 Carbon credit fraud in hydropower is a **multi-billion dollar problem**. Existing paper-based MRV systems allow:
 
@@ -35,7 +35,7 @@ This project makes **carbon fraud cryptographically impractical** by anchoring e
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 Sensor Telemetry (flow, head, pH, turbidity)
@@ -66,7 +66,7 @@ Sensor Telemetry (flow, head, pH, turbidity)
 
 ---
 
-## 🔗 Live Proof — Hedera Testnet
+##  Live Proof — Hedera Testnet
 
 All transactions are **real, on-chain, independently verifiable** right now:
 
@@ -121,7 +121,7 @@ node scripts/demo.js
 
 ---
 
-## ✅ Test Coverage
+##  Test Coverage
 
 | Suite | Tests | Coverage |
 |-------|-------|----------|
@@ -146,7 +146,7 @@ node scripts/demo.js
 
 ---
 
-## 📁 Repository Structure
+##  Repository Structure
 
 ```
 https-github.com-BikramBiswas786-hedera-hydropower-mrv/
@@ -181,7 +181,7 @@ https-github.com-BikramBiswas786-hedera-hydropower-mrv/
 
 ---
 
-## 🧠 Judging Criteria Alignment
+##  Judging Criteria Alignment
 
 ### 🔬 Innovation (10%)
 First on-chain MRV system combining **ACM0002 physics-based AI anomaly detection** with **Hedera HCS immutable audit trails** and **HTS token-backed RECs**. Novel AI Guardian scoring layer (0–100% trust) enables graduated responses: approve, flag, or reject — all recorded on-chain. No comparable open-source system exists on Hedera.
