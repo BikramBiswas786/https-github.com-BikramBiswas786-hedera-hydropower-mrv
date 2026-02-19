@@ -2,19 +2,18 @@
  * Hedera Hydropower MRV — Vercel API endpoint
  * Apex Hackathon 2026 — Live Demo URL
  *
- * GET /          → HTML dashboard (live demo overview)
- * GET /api/demo  → JSON: run MRV pipeline and return results
+ * GET /           → HTML dashboard
+ * GET /api/demo   → JSON: run MRV pipeline
  * GET /api/status → JSON: system status + live Hedera links
  */
 
 require('dotenv').config();
 
 const HEDERA_OPERATOR_ID = process.env.HEDERA_OPERATOR_ID || '0.0.6255927';
-const AUDIT_TOPIC_ID     = process.env.AUDIT_TOPIC_ID     || '0.0.7964262';
+const AUDIT_TOPIC_ID     = process.env.AUDIT_TOPIC_ID     || '0.0.7462776';
 const REC_TOKEN_ID       = process.env.REC_TOKEN_ID       || '0.0.7964264';
 const EF_GRID            = parseFloat(process.env.EF_GRID || '0.8');
 
-// Physics engine (ACM0002)
 function computePower({ flowRate, head, efficiency }) {
   return 1000 * 9.81 * flowRate * head * efficiency / 1e6;
 }
@@ -38,27 +37,27 @@ function classify(score) {
 module.exports = (req, res) => {
   const url = req.url || '/';
 
-  // ── JSON: /api/status ──────────────────────────────────────────────────
+  // ── JSON: /api/status
   if (url.startsWith('/api/status')) {
     return res.json({
       system: 'Hedera Hydropower MRV',
       hackathon: 'Hedera Hello Future Apex 2026',
       track: 'Sustainability',
       hedera: {
-        account: HEDERA_OPERATOR_ID,
-        network: 'testnet',
-        hcsTopic: AUDIT_TOPIC_ID,
-        htsToken: REC_TOKEN_ID,
-        hashscanTopic: `https://hashscan.io/testnet/topic/${AUDIT_TOPIC_ID}`,
-        hashscanToken: `https://hashscan.io/testnet/token/${REC_TOKEN_ID}`,
+        account:        HEDERA_OPERATOR_ID,
+        network:        'testnet',
+        hcsTopic:       AUDIT_TOPIC_ID,
+        htsToken:       REC_TOKEN_ID,
+        hashscanTopic:   `https://hashscan.io/testnet/topic/${AUDIT_TOPIC_ID}`,
+        hashscanToken:   `https://hashscan.io/testnet/token/${REC_TOKEN_ID}`,
         hashscanAccount: `https://hashscan.io/testnet/account/${HEDERA_OPERATOR_ID}`
       },
-      tests: { suites: 9, total: 234, passing: 234 },
+      tests:  { suites: 9, total: 234, passing: 234 },
       status: 'operational'
     });
   }
 
-  // ── JSON: /api/demo ────────────────────────────────────────────────────
+  // ── JSON: /api/demo
   if (url.startsWith('/api/demo')) {
     const goodReading = {
       deviceId: 'TURBINE-APEX-2026-001', flowRate: 12.5, head: 45.2,
@@ -72,10 +71,12 @@ module.exports = (req, res) => {
     const badScore  = trustScore(badReading);
     const mwh = goodReading.powerOutput;
     return res.json({
-      pipeline: 'Hedera Hydropower MRV — Full E2E Demo',
+      pipeline:  'Hedera Hydropower MRV — Full E2E Demo',
       timestamp: new Date().toISOString(),
       steps: [
-        { step: 1, name: 'Device DID', result: 'did:hedera:testnet:z5455524249...', status: 'ok' },
+        { step: 1, name: 'Device DID',
+          result: `did:hedera:testnet:z${Buffer.from('TURBINE-APEX-2026-001').toString('hex')}`,
+          status: 'ok' },
         { step: 2, name: 'HREC Token', tokenId: REC_TOKEN_ID, status: 'ok',
           hashscan: `https://hashscan.io/testnet/token/${REC_TOKEN_ID}` },
         { step: 3, name: 'Telemetry #1 — Normal',
@@ -92,20 +93,21 @@ module.exports = (req, res) => {
           note: 'Rejected — fraud evidence preserved on-chain permanently' },
         { step: 5, name: 'HREC Minting',
           mwhVerified: mwh,
-          co2Credits: parseFloat((mwh * EF_GRID).toFixed(3)),
-          hrecMinted: mwh,
+          co2Credits:  parseFloat((mwh * EF_GRID).toFixed(3)),
+          hrecMinted:  mwh,
           note: 'Only approved readings trigger token minting' }
       ],
       liveEvidence: {
-        approvedTx: '0.0.6255927@1771367521.991650439',
-        rejectedTx: '0.0.6255927@1771367525.903417316',
-        hashscanApproved: 'https://hashscan.io/testnet/transaction/0.0.6255927@1771367521.991650439',
-        hashscanRejected: 'https://hashscan.io/testnet/transaction/0.0.6255927@1771367525.903417316'
+        hcsTopic:    AUDIT_TOPIC_ID,
+        htsToken:    REC_TOKEN_ID,
+        hashscanTopic:   `https://hashscan.io/testnet/topic/${AUDIT_TOPIC_ID}`,
+        hashscanToken:   `https://hashscan.io/testnet/token/${REC_TOKEN_ID}`,
+        hashscanAccount: `https://hashscan.io/testnet/account/${HEDERA_OPERATOR_ID}`
       }
     });
   }
 
-  // ── HTML: / ───────────────────────────────────────────────────────────
+  // ── HTML: /
   res.setHeader('Content-Type', 'text/html');
   res.end(`<!DOCTYPE html>
 <html lang="en">
@@ -125,8 +127,6 @@ module.exports = (req, res) => {
     table{width:100%;border-collapse:collapse;font-size:.9rem}
     th{text-align:left;color:#64748b;padding:.4rem .6rem;border-bottom:1px solid #1e293b}
     td{padding:.5rem .6rem;border-bottom:1px solid #0f172a}
-    .approved{color:#22c55e;font-weight:bold}
-    .rejected{color:#ef4444;font-weight:bold}
     .link{color:#38bdf8;text-decoration:none}
     .link:hover{text-decoration:underline}
     .btn{display:inline-block;background:#0ea5e9;color:#fff;padding:.5rem 1.2rem;border-radius:8px;text-decoration:none;font-weight:bold;margin:.3rem}
@@ -158,50 +158,46 @@ module.exports = (req, res) => {
   </div>
 
   <div class="card">
-    <h2>&#x1f517; Live Hedera Testnet Evidence</h2>
+    <h2>&#x1f517; Live Hedera Testnet</h2>
     <table>
-      <tr><th>What</th><th>ID</th><th>Verify</th></tr>
-      <tr><td>Approved Telemetry TX</td><td style="font-size:.8rem">0.0.6255927@1771367521...</td>
-          <td><a class="link" href="https://hashscan.io/testnet/transaction/0.0.6255927@1771367521.991650439" target="_blank">HashScan &#x2197;</a></td></tr>
-      <tr><td>Rejected TX (fraud)</td><td style="font-size:.8rem">0.0.6255927@1771367525...</td>
-          <td><a class="link" href="https://hashscan.io/testnet/transaction/0.0.6255927@1771367525.903417316" target="_blank">HashScan &#x2197;</a></td></tr>
-      <tr><td>HREC Token</td><td>${REC_TOKEN_ID}</td>
-          <td><a class="link" href="https://hashscan.io/testnet/token/${REC_TOKEN_ID}" target="_blank">HashScan &#x2197;</a></td></tr>
+      <tr><th>What</th><th>ID</th><th>Verify on HashScan</th></tr>
+      <tr><td>Operator Account</td><td>${HEDERA_OPERATOR_ID}</td>
+          <td><a class="link" href="https://hashscan.io/testnet/account/${HEDERA_OPERATOR_ID}" target="_blank">View &#x2197;</a></td></tr>
       <tr><td>HCS Audit Topic</td><td>${AUDIT_TOPIC_ID}</td>
-          <td><a class="link" href="https://hashscan.io/testnet/topic/${AUDIT_TOPIC_ID}" target="_blank">HashScan &#x2197;</a></td></tr>
+          <td><a class="link" href="https://hashscan.io/testnet/topic/${AUDIT_TOPIC_ID}" target="_blank">View &#x2197;</a></td></tr>
+      <tr><td>HREC Token</td><td>${REC_TOKEN_ID}</td>
+          <td><a class="link" href="https://hashscan.io/testnet/token/${REC_TOKEN_ID}" target="_blank">View &#x2197;</a></td></tr>
     </table>
   </div>
 
   <div class="card">
     <h2>&#x1f9ea; Run the Demo Pipeline</h2>
-    <p style="color:#94a3b8;margin-bottom:1rem">Click the API endpoint to run the full MRV pipeline (sensor &#x2192; AI Guardian &#x2192; HCS &#x2192; REC minting) and get JSON results:</p>
+    <p style="color:#94a3b8;margin-bottom:1rem">Full MRV pipeline: sensor &#x2192; AI Guardian &#x2192; HCS &#x2192; REC minting</p>
     <a class="btn" href="/api/demo" target="_blank">&#x25b6; Run Demo (JSON)</a>
-    <a class="btn" href="/api/status" target="_blank">&#x2139; System Status (JSON)</a>
+    <a class="btn" href="/api/status" target="_blank">&#x2139; System Status</a>
   </div>
 
   <div class="card">
     <h2>&#x1f4d0; How It Works</h2>
     <table>
       <tr><th>Step</th><th>What happens</th><th>Hedera service</th></tr>
-      <tr><td>1</td><td>Sensor registers Device DID</td><td>DID (W3C + Hedera)</td></tr>
+      <tr><td>1</td><td>Sensor registers Device DID</td><td>W3C DID on Hedera</td></tr>
       <tr><td>2</td><td>Plant deploys HREC token</td><td>HTS</td></tr>
-      <tr><td>3</td><td>Telemetry submitted &amp; AI-verified (physics + stats)</td><td>AI Guardian</td></tr>
-      <tr><td>4</td><td>Result anchored to audit topic (immutable)</td><td>HCS</td></tr>
-      <tr><td>5</td><td>Approved readings mint HREC tokens (1 token = 1 MWh)</td><td>HTS</td></tr>
-      <tr><td>6</td><td>Any auditor verifies entire history on HashScan</td><td>HCS / HashScan</td></tr>
+      <tr><td>3</td><td>Telemetry verified by AI Guardian (ACM0002 physics)</td><td>AI Guardian</td></tr>
+      <tr><td>4</td><td>Result anchored immutably (approved or rejected)</td><td>HCS</td></tr>
+      <tr><td>5</td><td>Approved readings mint HREC tokens (1 = 1 MWh)</td><td>HTS</td></tr>
+      <tr><td>6</td><td>Any auditor verifies full history on HashScan</td><td>HCS / HashScan</td></tr>
     </table>
   </div>
 
   <div class="card">
-    <h2>&#x1f4c1; Repository</h2>
+    <h2>&#x1f4c1; Links</h2>
     <a class="btn" href="https://github.com/BikramBiswas786/https-github.com-BikramBiswas786-hedera-hydropower-mrv" target="_blank">GitHub Repo &#x2197;</a>
     <a class="btn" href="https://github.com/BikramBiswas786/https-github.com-BikramBiswas786-hedera-hydropower-mrv/blob/main/HACKATHON.md" target="_blank">Submission Brief &#x2197;</a>
-    <a class="btn" href="https://hashscan.io/testnet/account/${HEDERA_OPERATOR_ID}" target="_blank">HashScan Account &#x2197;</a>
+    <a class="btn" href="https://hashscan.io/testnet/account/${HEDERA_OPERATOR_ID}" target="_blank">HashScan &#x2197;</a>
   </div>
 
-  <footer>
-    Built on Hedera Hashgraph &bull; MIT License &bull; All testnet transactions independently verifiable
-  </footer>
+  <footer>Built on Hedera Hashgraph &bull; MIT License &bull; Apex Hackathon 2026</footer>
 </div>
 </body>
 </html>`);
