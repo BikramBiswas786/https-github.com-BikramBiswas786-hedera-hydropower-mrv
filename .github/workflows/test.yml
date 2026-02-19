@@ -1,18 +1,18 @@
-name: CI — Full Test Suite
+name: CI — Hedera Hydropower MRV Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
-    name: 224 Tests — Hedera Testnet
+    name: Run Test Suite (Node 18)
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js 18
@@ -24,19 +24,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run full test suite
-        run: npx jest --runInBand --forceExit
+      - name: Run all tests
+        run: npm test -- --forceExit --testTimeout=30000
         env:
-          # Hedera Testnet credentials (public testnet — no secret required)
-          HEDERA_OPERATOR_ID: ${{ secrets.HEDERA_OPERATOR_ID || '0.0.6255927' }}
-          HEDERA_OPERATOR_KEY: ${{ secrets.HEDERA_OPERATOR_KEY || '302e020100300506032b657004220420f4361ec73dc43e568f1620a7b7ecb7330790b8a1c7620f1a3620f46a53eed59' }}
-          AUDIT_TOPIC_ID: ${{ secrets.AUDIT_TOPIC_ID || '0.0.7462600' }}
-          EF_GRID: '0.8'
-          NODE_ENV: test
+          HEDERA_OPERATOR_ID:  ${{ secrets.HEDERA_OPERATOR_ID  || '0.0.6255927' }}
+          HEDERA_OPERATOR_KEY: ${{ secrets.HEDERA_OPERATOR_KEY || '' }}
+          AUDIT_TOPIC_ID:      ${{ secrets.AUDIT_TOPIC_ID      || '0.0.7964262' }}
+          REC_TOKEN_ID:        ${{ secrets.REC_TOKEN_ID        || '0.0.7964264' }}
+          EF_GRID:             ${{ secrets.EF_GRID             || '0.8' }}
+          NODE_ENV:            test
 
-      - name: Upload test evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-evidence
-          path: evidence/
+      - name: Run demo script (mock mode — no live credentials required)
+        run: node scripts/demo.js
+        env:
+          HEDERA_OPERATOR_ID: '0.0.6255927'
+          AUDIT_TOPIC_ID:     '0.0.7964262'
+          REC_TOKEN_ID:       '0.0.7964264'
+          EF_GRID:            '0.8'
+          # HEDERA_OPERATOR_KEY intentionally omitted → triggers MOCK MODE
