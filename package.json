@@ -12,12 +12,18 @@
     "create-token": "node scripts/tokens/02_create_rec_token_final.js",
     "submit-telemetry": "node scripts/telemetry/03_submit_telemetry.js",
     "generate-report": "node scripts/generate-report.js",
-    "run-with-evidence": "node scripts/run-with-evidence.js"
+    "run-with-evidence": "node scripts/run-with-evidence.js",
+    "bridge:modbus": "node examples/plant-bridge-modbus.js",
+    "bridge:http": "node examples/plant-bridge-http.js"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.80.0",
     "dotenv": "^17.3.1",
     "prom-client": "^15.1.0"
+  },
+  "optionalDependencies": {
+    "modbus-serial": "^8.0.17",
+    "axios": "^1.6.7"
   },
   "devDependencies": {
     "jest": "^29.7.0"
@@ -31,5 +37,5 @@
     "type": "git",
     "url": "https://github.com/BikramBiswas786/https-github.com-BikramBiswas786-hedera-hydropower-mrv"
   },
-  "keywords": ["hedera", "hydropower", "mrv", "carbon", "sustainability", "hcs", "hts", "did", "acm0002"]
+  "keywords": ["hedera", "hydropower", "mrv", "carbon", "sustainability", "hcs", "hts", "did", "acm0002", "modbus", "scada", "iot"]
 }
