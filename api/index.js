@@ -8,8 +8,7 @@
  * GET /api/hcs-feed → JSON: recent HCS messages (mock for demo)
  */
 
-require('dotenv').config();
-
+// Note: Vercel injects env vars directly, no need for dotenv
 const HEDERA_OPERATOR_ID = process.env.HEDERA_OPERATOR_ID || '0.0.6255927';
 const AUDIT_TOPIC_ID     = process.env.AUDIT_TOPIC_ID     || '0.0.7462776';
 const REC_TOKEN_ID       = process.env.REC_TOKEN_ID       || '0.0.7964264';
