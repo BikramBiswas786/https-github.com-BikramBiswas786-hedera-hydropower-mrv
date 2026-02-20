@@ -27,7 +27,7 @@ npm start
 
 ## 🌐 Live Demo
 
-🔗 **[View Live Dashboard](https://hedera-hydropower-mrv.vercel.app)**
+🔗 **[View Live Dashboard]([https://hedera-hydropower-mrv.vercel.app](https://hydropower-mrv-19feb26.vercel.app/))**
 
 ---
 
