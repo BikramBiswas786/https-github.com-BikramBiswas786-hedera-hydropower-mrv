@@ -91,6 +91,81 @@ class Workflow {
   }
 
   /**
+   * Submit telemetry to Hedera with proper retry logic
+   * CRITICAL FIX: Generates fresh transaction on each retry attempt
+   * @param {string} message - Message to submit
+   * @param {string} topicId - HCS topic ID
+   * @param {number} maxRetries - Maximum retry attempts (default: 3)
+   * @returns {Object} Receipt with transaction ID
+   */
+  async submitToHederaWithRetry(message, topicId, maxRetries = 3) {
+    if (!this.client) {
+      throw new Error('Hedera client not initialized');
+    }
+
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // CRITICAL: Generate FRESH transaction each attempt
+        // Reusing frozen transactions causes TRANSACTION_EXPIRED errors
+        const transaction = new TopicMessageSubmitTransaction()
+          .setTopicId(topicId)
+          .setMessage(message)
+          .setTransactionValidDuration(180); // 3 minutes (increased from default 120s)
+
+        // Freeze and sign
+        const signedTx = await transaction.freezeWith(this.client);
+        
+        // Execute with timeout to prevent hanging
+        const txResponse = await Promise.race([
+          signedTx.execute(this.client),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('TIMEOUT')), 30000) // 30s timeout
+          )
+        ]);
+
+        // Get receipt to confirm
+        const receipt = await txResponse.getReceipt(this.client);
+        
+        console.log(`[Hedera] Transaction successful on attempt ${attempt}/${maxRetries}`);
+        return {
+          transactionId: txResponse.transactionId.toString(),
+          receipt,
+          attempt
+        };
+
+      } catch (error) {
+        lastError = error;
+        const errorMsg = error.message || error.toString();
+        
+        console.warn(
+          `[Hedera] Attempt ${attempt}/${maxRetries} failed: ${errorMsg}`
+        );
+
+        // Don't retry on terminal errors
+        if (errorMsg.includes('INVALID_TOPIC_ID') || 
+            errorMsg.includes('UNAUTHORIZED') ||
+            errorMsg.includes('INSUFFICIENT_TX_FEE')) {
+          throw error;
+        }
+
+        // Retry with exponential backoff
+        if (attempt < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, attempt), 10000); // 1s, 2s, 4s, max 10s
+          console.log(`[Hedera] Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    // All retries exhausted
+    throw new Error(
+      `Hedera transaction failed after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`
+    );
+  }
+
+  /**
    * Submit a telemetry reading for verification and blockchain storage
    * @param {Object} telemetry - Sensor telemetry data
    * @returns {Object} Submission result
@@ -153,7 +228,7 @@ class Workflow {
   }
 
   /**
-   * Submit reading with retry logic
+   * Submit reading with retry logic (legacy method, now uses submitToHederaWithRetry internally)
    * @param {Object} telemetry - Sensor data
    * @returns {Object} Result with attempt count
    */
