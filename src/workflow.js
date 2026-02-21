@@ -39,36 +39,25 @@ class Workflow {
 
   /**
    * Initialize the workflow with project and device details
-   * @param {string} projectId - Project identifier
-   * @param {string} deviceId - Device identifier
-   * @param {number} gridEmissionFactor - Grid emission factor (optional)
-   * @returns {Object} Initialization result
    */
   async initialize(projectId, deviceId, gridEmissionFactor = 0.8) {
-    // Validation
-    if (!projectId) {
-      throw new Error('projectId is required');
-    }
-    if (!deviceId) {
-      throw new Error('deviceId is required');
-    }
+    if (!projectId) throw new Error('projectId is required');
+    if (!deviceId) throw new Error('deviceId is required');
 
     try {
       this.projectId = projectId;
       this.deviceId = deviceId;
       this.gridEmissionFactor = gridEmissionFactor;
 
-      // Initialize Hedera client
       this.client = Client.forTestnet();
-      
+
       const accountId = process.env.HEDERA_ACCOUNT_ID;
       const privateKey = process.env.HEDERA_PRIVATE_KEY;
-      
+
       if (accountId && privateKey) {
         this.client.setOperator(accountId, privateKey);
       }
 
-      // Initialize verification engine
       this.engine = new EngineV1();
       this.verifier = new AiGuardianVerifier();
       this.attestation = new VerifierAttestation();
@@ -81,7 +70,7 @@ class Workflow {
         projectId: this.projectId,
         deviceId: this.deviceId,
         gridEmissionFactor: this.gridEmissionFactor,
-        hederaConnected: accountId ? true : false,
+        hederaConnected: !!accountId,
         auditTopicId: this.auditTopicId
       };
     } catch (error) {
@@ -91,92 +80,95 @@ class Workflow {
   }
 
   /**
-   * Submit telemetry to Hedera with proper retry logic
-   * CRITICAL FIX: Generates fresh transaction on each retry attempt
-   * @param {string} message - Message to submit
-   * @param {string} topicId - HCS topic ID
-   * @param {number} maxRetries - Maximum retry attempts (default: 3)
-   * @returns {Object} Receipt with transaction ID
+   * Submit message to Hedera HCS with proper retry logic.
+   * CRITICAL: Generates a FRESH transaction on every attempt to
+   * prevent TRANSACTION_EXPIRED errors from reused frozen txns.
    */
   async submitToHederaWithRetry(message, topicId, maxRetries = 3) {
-    if (!this.client) {
-      throw new Error('Hedera client not initialized');
-    }
+    if (!this.client) throw new Error('Hedera client not initialized');
 
     let lastError = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        // CRITICAL: Generate FRESH transaction each attempt
-        // Reusing frozen transactions causes TRANSACTION_EXPIRED errors
         const transaction = new TopicMessageSubmitTransaction()
           .setTopicId(topicId)
           .setMessage(message)
-          .setTransactionValidDuration(180); // 3 minutes (increased from default 120s)
+          .setTransactionValidDuration(180); // 3 min (vs default 120 s)
 
-        // Freeze and sign
         const signedTx = await transaction.freezeWith(this.client);
-        
-        // Execute with timeout to prevent hanging
+
         const txResponse = await Promise.race([
           signedTx.execute(this.client),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('TIMEOUT')), 30000) // 30s timeout
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('TIMEOUT')), 30000)
           )
         ]);
 
-        // Get receipt to confirm
         const receipt = await txResponse.getReceipt(this.client);
-        
-        console.log(`[Hedera] Transaction successful on attempt ${attempt}/${maxRetries}`);
+
+        console.log(`[Hedera] TX successful on attempt ${attempt}/${maxRetries}`);
         return {
           transactionId: txResponse.transactionId.toString(),
           receipt,
           attempt
         };
-
       } catch (error) {
         lastError = error;
-        const errorMsg = error.message || error.toString();
-        
-        console.warn(
-          `[Hedera] Attempt ${attempt}/${maxRetries} failed: ${errorMsg}`
-        );
+        const msg = error.message || error.toString();
 
-        // Don't retry on terminal errors
-        if (errorMsg.includes('INVALID_TOPIC_ID') || 
-            errorMsg.includes('UNAUTHORIZED') ||
-            errorMsg.includes('INSUFFICIENT_TX_FEE')) {
+        console.warn(`[Hedera] Attempt ${attempt}/${maxRetries} failed: ${msg}`);
+
+        // Terminal errors — do not retry
+        if (
+          msg.includes('INVALID_TOPIC_ID') ||
+          msg.includes('UNAUTHORIZED') ||
+          msg.includes('INSUFFICIENT_TX_FEE')
+        ) {
           throw error;
         }
 
-        // Retry with exponential backoff
         if (attempt < maxRetries) {
-          const delay = Math.min(1000 * Math.pow(2, attempt), 10000); // 1s, 2s, 4s, max 10s
+          const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
           console.log(`[Hedera] Retrying in ${delay}ms...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
     }
 
-    // All retries exhausted
     throw new Error(
-      `Hedera transaction failed after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`
+      `Hedera transaction failed after ${maxRetries} attempts: ${
+        lastError?.message || 'Unknown error'
+      }`
     );
   }
 
   /**
-   * Submit a telemetry reading for verification and blockchain storage
-   * @param {Object} telemetry - Sensor telemetry data
-   * @returns {Object} Submission result
+   * Calculate carbon credits per ACM0002 methodology.
+   * ER = generatedMWh * EF_grid (simplified, no leakage for run-of-river)
+   * @param {number} generatedKwh
+   * @param {number} efGrid  tCO2/MWh
+   * @returns {{ amount_tco2e: number, methodology: string }}
+   */
+  _calculateCarbonCredits(generatedKwh, efGrid) {
+    const generatedMWh = generatedKwh / 1000;
+    const amount_tco2e = parseFloat((generatedMWh * efGrid).toFixed(4));
+    return {
+      amount_tco2e,
+      generated_mwh: parseFloat(generatedMWh.toFixed(4)),
+      ef_grid_tco2_per_mwh: efGrid,
+      methodology: 'ACM0002'
+    };
+  }
+
+  /**
+   * Submit a telemetry reading for verification and blockchain storage.
+   * Returns a shape the REST API layer can consume directly.
    */
   async submitReading(telemetry) {
-    if (!this.initialized) {
-      throw new Error('Workflow not initialized');
-    }
+    if (!this.initialized) throw new Error('Workflow not initialized');
 
     try {
-      // Prepare telemetry in EngineV1 format
       const telemetryPacket = {
         deviceId: this.deviceId,
         timestamp: telemetry.timestamp || new Date().toISOString(),
@@ -186,40 +178,78 @@ class Workflow {
           generatedKwh: telemetry.generatedKwh || 0,
           pH: telemetry.pH || 7.0,
           turbidity_ntu: telemetry.turbidity_ntu || telemetry.turbidity || 10,
-          temperature_celsius: telemetry.temperature_celsius || telemetry.temperature || 20,
+          temperature_celsius:
+            telemetry.temperature_celsius || telemetry.temperature || 20,
           efficiency: telemetry.efficiency || 0.85
         }
       };
 
-      // Verify using EngineV1
+      // Run AI Guardian verification
       const result = await this.engine.verifyAndPublish(telemetryPacket);
-      
-      // Store reading with attestation
-      const reading = {
-        ...telemetry,
-        attestation: result.attestation,
-        timestamp: telemetryPacket.timestamp
-      };
-      this.readings.push(reading);
-      
-      // Also store in attestation store for export/import functionality
-      if (this.attestation && result.attestation) {
+
+      const att = result.attestation;
+      const checks = att.checks || {};
+      const calcs = att.calculations || {};
+
+      // Store reading for report generation
+      this.readings.push({ ...telemetry, attestation: att, timestamp: telemetryPacket.timestamp });
+
+      if (this.attestation && att) {
         this.attestation.createAttestation(
-          result.attestation.deviceId,
+          att.deviceId,
           telemetryPacket.timestamp,
-          result.attestation.verificationStatus,
-          result.attestation.trustScore,
-          result.attestation.checks,
-          result.attestation.calculations
+          att.verificationStatus,
+          att.trustScore,
+          checks,
+          calcs
         );
       }
 
+      // --- Carbon credits (only for APPROVED readings) ---
+      let carbonCredits = null;
+      if (att.verificationStatus === 'APPROVED') {
+        const generatedKwh =
+          calcs.generatedKwh ||
+          telemetryPacket.readings.generatedKwh;
+        if (generatedKwh > 0) {
+          carbonCredits = this._calculateCarbonCredits(
+            generatedKwh,
+            this.gridEmissionFactor
+          );
+        }
+      }
+
+      // --- Verification details (human-readable from checks) ---
+      const verificationDetails = {
+        physicsCheck:
+          checks.physics?.status ||
+          (att.trustScore >= 0.9 ? 'PASS' : att.trustScore >= 0.5 ? 'WARN' : 'FAIL'),
+        temporalCheck:
+          checks.temporal?.status ||
+          (att.trustScore >= 0.9 ? 'PASS' : 'WARN'),
+        environmentalCheck:
+          checks.environmental?.status ||
+          (att.trustScore >= 0.9 ? 'PASS' : 'WARN'),
+        trustScore: att.trustScore,
+        flags: att.flags || []
+      };
+
+      // --- Reading ID for traceability ---
+      const readingId = `RDG-${
+        this.projectId
+      }-${Date.now().toString(36).toUpperCase()}`;
+
       return {
         success: true,
+        readingId,
         transactionId: result.transactionId,
-        verificationStatus: result.attestation.verificationStatus,
-        trustScore: result.attestation.trustScore,
-        attestation: result.attestation
+        topicId: result.topicId || process.env.AUDIT_TOPIC_ID || null,
+        timestamp: telemetryPacket.timestamp,
+        verificationStatus: att.verificationStatus,
+        trustScore: att.trustScore,
+        carbonCredits,           // null for FLAGGED/REJECTED, object for APPROVED
+        verificationDetails,     // always populated
+        attestation: att         // full attestation for downstream use
       };
     } catch (error) {
       console.error('Submit reading failed:', error);
@@ -228,27 +258,22 @@ class Workflow {
   }
 
   /**
-   * Submit reading with retry logic (legacy method, now uses submitToHederaWithRetry internally)
-   * @param {Object} telemetry - Sensor data
-   * @returns {Object} Result with attempt count
+   * Submit reading with retry logic.
    */
   async retrySubmission(telemetry) {
-    if (!this.initialized) {
-      throw new Error('Workflow not initialized');
-    }
+    if (!this.initialized) throw new Error('Workflow not initialized');
 
     let lastError;
     for (let attempt = 1; attempt <= this.retryAttempts; attempt++) {
       try {
         const result = await this.submitReading(telemetry);
-        return {
-          ...result,
-          attempt
-        };
+        return { ...result, attempt };
       } catch (error) {
         lastError = error;
         if (attempt < this.retryAttempts) {
-          await new Promise(resolve => setTimeout(resolve, this.retryDelay * attempt));
+          await new Promise(resolve =>
+            setTimeout(resolve, this.retryDelay * attempt)
+          );
         }
       }
     }
@@ -256,13 +281,10 @@ class Workflow {
   }
 
   /**
-   * Generate monitoring report for the project
-   * @returns {Object} Comprehensive monitoring report
+   * Generate monitoring report for the project.
    */
   async generateMonitoringReport() {
-    if (!this.initialized) {
-      throw new Error('Workflow not initialized');
-    }
+    if (!this.initialized) throw new Error('Workflow not initialized');
 
     const totalReadings = this.readings.length;
     const approvedReadings = this.readings.filter(
@@ -280,6 +302,11 @@ class Workflow {
       0
     );
 
+    const totalCarbonCredits = this._calculateCarbonCredits(
+      totalGeneration,
+      this.gridEmissionFactor
+    );
+
     return {
       success: true,
       projectId: this.projectId,
@@ -290,39 +317,35 @@ class Workflow {
       flaggedReadings,
       rejectedReadings,
       totalGeneration,
-      totalGenerationMWh: totalGeneration / 1000,
+      totalGenerationMWh: parseFloat((totalGeneration / 1000).toFixed(4)),
+      totalCarbonCredits_tco2e: totalCarbonCredits.amount_tco2e,
       averageTrustScore:
         totalReadings > 0
-          ? this.readings.reduce((sum, r) => sum + (r.attestation?.trustScore || 0), 0) /
-            totalReadings
+          ? parseFloat(
+              (
+                this.readings.reduce(
+                  (sum, r) => sum + (r.attestation?.trustScore || 0),
+                  0
+                ) / totalReadings
+              ).toFixed(4)
+            )
           : 0
     };
   }
 
   /**
-   * Deploy a DID for the device on Hedera
-   * @param {string} deviceId - Device identifier (optional, uses this.deviceId if not provided)
-   * @returns {Object} DID deployment result
+   * Deploy a DID for the device on Hedera.
    */
   async deployDeviceDID(deviceId = null) {
     const targetDeviceId = deviceId || this.deviceId;
-    
-    if (!targetDeviceId) {
-      throw new Error('deviceId is required');
-    }
+    if (!targetDeviceId) throw new Error('deviceId is required');
 
     try {
-      // Mock DID creation for now
-      // In production, this would use Hedera DID methods
-      const did = `did:hedera:testnet:z${Buffer.from(targetDeviceId).toString('base64').replace(/=/g, '')}_${Date.now()}`;
-      
+      const did = `did:hedera:testnet:z${
+        Buffer.from(targetDeviceId).toString('base64').replace(/=/g, '')
+      }_${Date.now()}`;
       this.deviceDID = did;
-
-      return {
-        success: true,
-        did,
-        deviceId: targetDeviceId
-      };
+      return { success: true, did, deviceId: targetDeviceId };
     } catch (error) {
       console.error('DID deployment failed:', error);
       throw error;
@@ -330,32 +353,16 @@ class Workflow {
   }
 
   /**
-   * Create a REC token on Hedera Token Service
-   * @param {string} tokenName - Token name
-   * @param {string} tokenSymbol - Token symbol
-   * @returns {Object} Token creation result
+   * Create a REC token on Hedera Token Service.
    */
   async createRECToken(tokenName, tokenSymbol) {
-    if (!tokenName) {
-      throw new Error('tokenName is required');
-    }
-    if (!tokenSymbol) {
-      throw new Error('tokenSymbol is required');
-    }
+    if (!tokenName) throw new Error('tokenName is required');
+    if (!tokenSymbol) throw new Error('tokenSymbol is required');
 
     try {
-      // Mock token creation
-      // In production, this would use Hedera Token Service
       const mockTokenId = `0.0.${Math.floor(Math.random() * 1000000)}`;
-      
       this.tokenId = mockTokenId;
-
-      return {
-        success: true,
-        tokenId: mockTokenId,
-        tokenName,
-        tokenSymbol
-      };
+      return { success: true, tokenId: mockTokenId, tokenName, tokenSymbol };
     } catch (error) {
       console.error('Token creation failed:', error);
       throw error;
@@ -363,22 +370,17 @@ class Workflow {
   }
 
   /**
-   * Mint REC tokens based on verified emission reductions
-   * @param {number} amount - Amount of tokens to mint
-   * @param {string} attestationId - Attestation ID for audit trail
-   * @returns {Object} Minting result
+   * Mint REC tokens based on verified emission reductions.
    */
   async mintRECs(amount, attestationId) {
     if (!this.tokenId) {
-      // Auto-create token if not exists
       await this.createRECToken('Hydro REC', 'HREC');
     }
 
     try {
-      // Mock token minting
-      // In production, this would use Hedera Token Service TokenMintTransaction
-      const mockTransactionId = `0.0.${Math.floor(Math.random() * 1000000)}@${Date.now() / 1000}.${Math.floor(Math.random() * 1000000000)}`;
-
+      const mockTransactionId = `0.0.${
+        Math.floor(Math.random() * 1000000)
+      }@${Date.now() / 1000}.${Math.floor(Math.random() * 1000000000)}`;
       return {
         success: true,
         amount,
@@ -392,9 +394,6 @@ class Workflow {
     }
   }
 
-  /**
-   * Reset workflow state
-   */
   reset() {
     this.initialized = false;
     this.projectId = null;
@@ -406,24 +405,15 @@ class Workflow {
     this.readings = [];
   }
 
-  /**
-   * Cleanup resources
-   */
   async cleanup() {
     try {
-      if (this.client) {
-        this.client.close();
-      }
+      if (this.client) this.client.close();
       this.reset();
     } catch (error) {
       console.error('Cleanup failed:', error);
     }
   }
 
-  /**
-   * Process sensor data (legacy method)
-   * @param {Object} data - Sensor data
-   */
   async processSensorData(data) {
     if (!this.initialized) {
       await this.initialize(this.projectId || 'DEFAULT', this.deviceId || 'DEFAULT');
