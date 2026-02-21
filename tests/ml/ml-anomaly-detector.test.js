@@ -111,21 +111,21 @@ describe('IsolationForest (pure JS)', () => {
 
 describe('Feature extraction (8-dim normalised)', () => {
   test('extractFeatures returns 8-element array', () => {
-    const f = extractFeatures(NORMAL_READING);
-    expect(f).toHaveLength(8);
+    const { features } = extractFeatures(NORMAL_READING);
+    expect(features).toHaveLength(8);
   });
 
   test('all features in [0, 1]', () => {
-    const f = extractFeatures(NORMAL_READING);
-    f.forEach(v => {
+    const { features } = extractFeatures(NORMAL_READING);
+    features.forEach(v => {
       expect(v).toBeGreaterThanOrEqual(0);
       expect(v).toBeLessThanOrEqual(1);
     });
   });
 
   test('fraud reading has higher efficiencyRatio feature', () => {
-    const fNormal = extractFeatures(NORMAL_READING);
-    const fFraud  = extractFeatures(FRAUD_READING);
+    const { features: fNormal } = extractFeatures(NORMAL_READING);
+    const { features: fFraud }  = extractFeatures(FRAUD_READING);
     // Feature index 7 = efficiencyRatio
     expect(fFraud[7]).toBeGreaterThan(fNormal[7]);
   });
