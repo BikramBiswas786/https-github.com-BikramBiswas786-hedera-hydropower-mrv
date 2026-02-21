@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Hedera Hydropower MRV REST API Server
  * Provides production-ready HTTP endpoints for telemetry submission
  * 
@@ -105,12 +105,13 @@ app.use((error, req, res, next) => {
 
 // Start server
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`✓ Hedera Hydropower MRV API running on port ${PORT}`);
-    console.log(`✓ Health: http://localhost:${PORT}/health`);
-    console.log(`✓ Metrics: http://localhost:${PORT}/metrics`);
-    console.log(`✓ API Docs: http://localhost:${PORT}/`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`âœ“ Hedera Hydropower MRV API running on port ${PORT}`);
+    console.log(`âœ“ Health: http://localhost:${PORT}/health`);
+    console.log(`âœ“ Metrics: http://localhost:${PORT}/metrics`);
+    console.log(`âœ“ API Docs: http://localhost:${PORT}/`);
   });
 }
 
 module.exports = app;
+
