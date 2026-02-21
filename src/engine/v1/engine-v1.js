@@ -8,7 +8,18 @@ const {
 } = require('@hashgraph/sdk');
 require('dotenv').config();
 
-const EF_GRID = parseFloat(process.env.EF_GRID || "0.8");
+const EF_GRID = parseFloat(process.env.EF_GRID || '0.8');
+
+// ============================================
+// REAL ML — ISOLATION FOREST ANOMALY DETECTOR
+// ============================================
+// Replaces the previous Z-score arithmetic.
+// IsolationForest auto-trains on 2000 synthetic samples at startup.
+// After the 90-day pilot, call mlDetector.retrain(realReadings) to
+// improve accuracy from synthetic → real-world data.
+
+const { getMLDetector } = require('../../ml/MLAnomalyDetector');
+const mlDetector = getMLDetector();
 
 // ============================================
 // LAZY HEDERA CLIENT INITIALIZATION
@@ -19,17 +30,12 @@ let _operatorKey = null;
 let _hederaAvailable = null;
 
 function getClient() {
-  if (_hederaAvailable === false) {
-    return null;
-  }
+  if (_hederaAvailable === false) return null;
+  if (_client) return { client: _client, operatorKey: _operatorKey };
 
-  if (_client) {
-    return { client: _client, operatorKey: _operatorKey };
-  }
-
-  const OPERATOR_ID = process.env.HEDERA_OPERATOR_ID;
+  const OPERATOR_ID     = process.env.HEDERA_OPERATOR_ID;
   const OPERATOR_KEY_STR = process.env.HEDERA_OPERATOR_KEY;
-  const AUDIT_TOPIC_ID = process.env.AUDIT_TOPIC_ID;
+  const AUDIT_TOPIC_ID  = process.env.AUDIT_TOPIC_ID;
 
   if (!OPERATOR_ID || !OPERATOR_KEY_STR || !AUDIT_TOPIC_ID) {
     console.warn('[EngineV1] Hedera credentials missing, running in mock mode');
@@ -57,326 +63,230 @@ function getAuditTopicId() {
 }
 
 // ============================================
-// ENHANCED AI CHECKS - GRADUATED SCORING
+// LAYER 1 — PHYSICS CHECK (rule-based, exact)
 // ============================================
 
 function validatePhysicsConstraints(reading) {
-  const density = 1000;
-  const gravity = 9.81;
+  const density    = 1000;
+  const gravity    = 9.81;
   const efficiency = reading.efficiency ?? 0.85;
 
-  const expectedPowerW =
-    density * gravity * reading.flowRate_m3_per_s * reading.headHeight_m * efficiency;
-  const expectedPowerKw = expectedPowerW / 1000;
+  const expectedPowerKw = (density * gravity * reading.flowRate_m3_per_s * reading.headHeight_m * efficiency) / 1000;
   const measuredPowerKw = reading.generatedKwh;
+  const deviation       = Math.abs(measuredPowerKw - expectedPowerKw) / expectedPowerKw;
 
-  const deviation = Math.abs(measuredPowerKw - expectedPowerKw) / expectedPowerKw;
-
-  // GRADUATED SCORING (Enhanced AI)
-  let score = 1.0;
-  let status = 'PASS';
-  
-  if (deviation < 0.05) {
-    score = 1.0;
-    status = 'PERFECT';
-  } else if (deviation < 0.10) {
-    score = 0.95;
-    status = 'EXCELLENT';
-  } else if (deviation < 0.15) {
-    score = 0.85;
-    status = 'GOOD';
-  } else if (deviation < 0.20) {
-    score = 0.70;
-    status = 'ACCEPTABLE';
-  } else if (deviation < 0.30) {
-    score = 0.50;
-    status = 'QUESTIONABLE';
-  } else {
-    score = 0.0;
-    status = 'FAIL';
-  }
+  let score, status;
+  if      (deviation < 0.05) { score = 1.00; status = 'PERFECT';      }
+  else if (deviation < 0.10) { score = 0.95; status = 'EXCELLENT';    }
+  else if (deviation < 0.15) { score = 0.85; status = 'GOOD';         }
+  else if (deviation < 0.20) { score = 0.70; status = 'ACCEPTABLE';   }
+  else if (deviation < 0.30) { score = 0.50; status = 'QUESTIONABLE'; }
+  else                        { score = 0.00; status = 'FAIL';         }
 
   return {
     score,
     status,
-    deviation: parseFloat((deviation * 100).toFixed(2)),
-    expectedPowerKw: parseFloat(expectedPowerKw.toFixed(2)),
-    measuredPowerKw: parseFloat(measuredPowerKw.toFixed(2)),
-    reason: status === 'FAIL' ? `Physics deviation ${(deviation * 100).toFixed(1)}% (>30%)` : null
+    deviation:        parseFloat((deviation * 100).toFixed(2)),
+    expectedPowerKw:  parseFloat(expectedPowerKw.toFixed(2)),
+    measuredPowerKw:  parseFloat(measuredPowerKw.toFixed(2)),
+    reason:           status === 'FAIL' ? `Physics deviation ${(deviation * 100).toFixed(1)}% (>30%)` : null
   };
 }
+
+// ============================================
+// LAYER 2 — TEMPORAL CONSISTENCY
+// ============================================
 
 function validateTemporalConsistency(current, previous) {
   if (!previous) {
-    return { 
-      score: 1.0, 
-      status: 'FIRST_READING',
-      genChange: 0,
-      flowChange: 0,
-      headChange: 0,
-      reason: null 
-    };
+    return { score: 1.0, status: 'FIRST_READING', genChange: 0, flowChange: 0, headChange: 0, reason: null };
   }
 
-  const genChange = Math.abs(current.generatedKwh - previous.generatedKwh) / previous.generatedKwh;
-  const flowChange = Math.abs(current.flowRate_m3_per_s - previous.flowRate_m3_per_s) / previous.flowRate_m3_per_s;
-  const headChange = Math.abs(current.headHeight_m - previous.headHeight_m) / previous.headHeight_m;
+  const genChange  = Math.abs(current.generatedKwh        - previous.generatedKwh)        / (previous.generatedKwh        || 1);
+  const flowChange = Math.abs(current.flowRate_m3_per_s   - previous.flowRate_m3_per_s)   / (previous.flowRate_m3_per_s   || 1);
+  const headChange = Math.abs(current.headHeight_m        - previous.headHeight_m)        / (previous.headHeight_m        || 1);
 
-  // GRADUATED SCORING (Enhanced AI)
   let score = 1.0;
-  
-  // Generation change penalty
-  if (genChange < 0.10) score *= 1.0;
+  if      (genChange < 0.10) score *= 1.00;
   else if (genChange < 0.20) score *= 0.95;
   else if (genChange < 0.30) score *= 0.85;
   else if (genChange < 0.50) score *= 0.70;
-  else score *= 0.30;
-  
-  // Flow rate change penalty
-  if (flowChange < 0.15) score *= 1.0;
+  else                        score *= 0.30;
+
+  if      (flowChange < 0.15) score *= 1.00;
   else if (flowChange < 0.30) score *= 0.95;
   else if (flowChange < 0.50) score *= 0.80;
-  else score *= 0.50;
-  
-  // Head change penalty
-  if (headChange < 0.05) score *= 1.0;
+  else                         score *= 0.50;
+
+  if      (headChange < 0.05) score *= 1.00;
   else if (headChange < 0.10) score *= 0.95;
   else if (headChange < 0.20) score *= 0.80;
-  else score *= 0.50;
+  else                         score *= 0.50;
 
   let status = 'PASS';
-  if (score < 0.50) status = 'FAIL';
+  if      (score < 0.50) status = 'FAIL';
   else if (score < 0.85) status = 'WARN';
 
   return {
-    score: parseFloat(score.toFixed(4)),
+    score:       parseFloat(score.toFixed(4)),
     status,
-    genChange: parseFloat((genChange * 100).toFixed(2)),
-    flowChange: parseFloat((flowChange * 100).toFixed(2)),
-    headChange: parseFloat((headChange * 100).toFixed(2)),
-    reason: status === 'FAIL' ? 'Excessive temporal variation' : null
+    genChange:   parseFloat((genChange * 100).toFixed(2)),
+    flowChange:  parseFloat((flowChange * 100).toFixed(2)),
+    headChange:  parseFloat((headChange * 100).toFixed(2)),
+    reason:      status === 'FAIL' ? 'Excessive temporal variation' : null
   };
 }
+
+// ============================================
+// LAYER 3 — ENVIRONMENTAL BOUNDS
+// ============================================
 
 function validateEnvironmentalBounds(reading, siteConfig = {}) {
   const bounds = {
-    pH: { min: 6.5, max: 8.5, acceptable: { min: 6.0, max: 9.0 }, questionable: { min: 5.5, max: 9.5 } },
-    turbidity_ntu: { min: 0, max: 50, acceptable: { min: 0, max: 100 }, questionable: { min: 0, max: 200 } },
-    temperature_celsius: { min: 0, max: 30, acceptable: { min: -5, max: 35 }, questionable: { min: -10, max: 40 } },
-    flowRate_m3_per_s: siteConfig.flowRateBounds || { min: 0.1, max: 100 },
-    headHeight_m: siteConfig.headBounds || { min: 10, max: 500 }
+    pH:                  { min: 6.5, max: 8.5, acceptable: { min: 6.0, max: 9.0 }, questionable: { min: 5.5, max: 9.5 } },
+    turbidity_ntu:       { min: 0,   max: 50,  acceptable: { min: 0,   max: 100 }, questionable: { min: 0,   max: 200 } },
+    temperature_celsius: { min: 0,   max: 30,  acceptable: { min: -5,  max: 35  }, questionable: { min: -10, max: 40  } }
   };
 
-  // GRADUATED SCORING (Enhanced AI)
   let score = 1.0;
   const details = {};
 
-  // pH check
-  const pH = reading.pH;
-  if (pH >= bounds.pH.min && pH <= bounds.pH.max) {
-    details.pH = { value: pH, status: 'PERFECT', score: 1.0 };
-  } else if (pH >= bounds.pH.acceptable.min && pH <= bounds.pH.acceptable.max) {
-    details.pH = { value: pH, status: 'ACCEPTABLE', score: 0.95 };
-    score *= 0.95;
-  } else if (pH >= bounds.pH.questionable.min && pH <= bounds.pH.questionable.max) {
-    details.pH = { value: pH, status: 'QUESTIONABLE', score: 0.80 };
-    score *= 0.80;
-  } else {
-    details.pH = { value: pH, status: 'OUT_OF_RANGE', score: 0.30 };
-    score *= 0.30;
+  function checkParam(val, b, name) {
+    if (val === undefined || val === null) return;
+    if (val >= b.min && val <= b.max) {
+      details[name] = { value: val, status: 'PERFECT', score: 1.0 };
+    } else if (val >= b.acceptable.min && val <= b.acceptable.max) {
+      details[name] = { value: val, status: 'ACCEPTABLE', score: 0.95 };
+      score *= 0.95;
+    } else if (val >= b.questionable.min && val <= b.questionable.max) {
+      details[name] = { value: val, status: 'QUESTIONABLE', score: 0.80 };
+      score *= 0.80;
+    } else {
+      details[name] = { value: val, status: 'OUT_OF_RANGE', score: 0.30 };
+      score *= 0.30;
+    }
   }
 
-  // Turbidity check
-  const turbidity = reading.turbidity_ntu;
-  if (turbidity >= bounds.turbidity_ntu.min && turbidity <= bounds.turbidity_ntu.max) {
-    details.turbidity = { value: turbidity, status: 'PERFECT', score: 1.0 };
-  } else if (turbidity >= bounds.turbidity_ntu.acceptable.min && turbidity <= bounds.turbidity_ntu.acceptable.max) {
-    details.turbidity = { value: turbidity, status: 'ACCEPTABLE', score: 0.95 };
-    score *= 0.95;
-  } else if (turbidity >= bounds.turbidity_ntu.questionable.min && turbidity <= bounds.turbidity_ntu.questionable.max) {
-    details.turbidity = { value: turbidity, status: 'QUESTIONABLE', score: 0.80 };
-    score *= 0.80;
-  } else {
-    details.turbidity = { value: turbidity, status: 'OUT_OF_RANGE', score: 0.30 };
-    score *= 0.30;
-  }
-
-  // Temperature check
-  const temp = reading.temperature_celsius;
-  if (temp >= bounds.temperature_celsius.min && temp <= bounds.temperature_celsius.max) {
-    details.temperature = { value: temp, status: 'PERFECT', score: 1.0 };
-  } else if (temp >= bounds.temperature_celsius.acceptable.min && temp <= bounds.temperature_celsius.acceptable.max) {
-    details.temperature = { value: temp, status: 'ACCEPTABLE', score: 0.95 };
-    score *= 0.95;
-  } else if (temp >= bounds.temperature_celsius.questionable.min && temp <= bounds.temperature_celsius.questionable.max) {
-    details.temperature = { value: temp, status: 'QUESTIONABLE', score: 0.80 };
-    score *= 0.80;
-  } else {
-    details.temperature = { value: temp, status: 'OUT_OF_RANGE', score: 0.30 };
-    score *= 0.30;
-  }
+  checkParam(reading.pH,                  bounds.pH,                  'pH');
+  checkParam(reading.turbidity_ntu,       bounds.turbidity_ntu,       'turbidity');
+  checkParam(reading.temperature_celsius, bounds.temperature_celsius, 'temperature');
 
   let status = 'PASS';
-  if (score < 0.50) status = 'FAIL';
+  if      (score < 0.50) status = 'FAIL';
   else if (score < 0.85) status = 'WARN';
 
-  return {
-    score: parseFloat(score.toFixed(4)),
-    status,
-    details,
-    reason: status === 'FAIL' ? 'Environmental parameters out of acceptable range' : null
-  };
+  return { score: parseFloat(score.toFixed(4)), status, details, reason: status === 'FAIL' ? 'Environmental out of range' : null };
 }
 
-function detectStatisticalAnomalies(current, history) {
-  if (!history.length) {
-    return { 
-      score: 1.0, 
-      status: 'NO_HISTORY',
-      zScore: 0, 
-      mean: 0,
-      stdDev: 0,
-      reason: null 
-    };
-  }
+// ============================================
+// LAYER 4 — ML ANOMALY DETECTION  🤖
+//           Isolation Forest (real ML)
+// ============================================
 
-  const vals = history.map(r => r.generatedKwh);
-  const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-  const variance = vals.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / vals.length;
-  const stdDev = Math.sqrt(variance) || 1e-6;
+/**
+ * Uses the pre-trained Isolation Forest model to detect anomalies.
+ * Replaces the previous Z-score / mean-stddev arithmetic.
+ * The model auto-trains on startup and can be retrained with real data.
+ *
+ * @param {object} current  - Current telemetry reading
+ * @param {object[]} _history - (kept for API compatibility, not used by ML)
+ * @returns {object} Scoring result compatible with engine's expected shape
+ */
+function detectStatisticalAnomalies(current, _history) {
+  const ml = mlDetector.detect(current);
 
-  const z = Math.abs((current.generatedKwh - mean) / stdDev);
+  // Map ML output to engine's 5-level scoring
+  let score, status;
 
-  // GRADUATED SCORING (Enhanced AI)
-  let score = 1.0;
-  let status = 'PASS';
-
-  if (z < 1.0) {
-    score = 1.0;
-    status = 'NORMAL';
-  } else if (z < 2.0) {
-    score = 0.95;
-    status = 'ACCEPTABLE';
-  } else if (z < 2.5) {
-    score = 0.85;
-    status = 'QUESTIONABLE';
-  } else if (z < 3.0) {
-    score = 0.70;
-    status = 'SUSPICIOUS';
+  if (!ml.isAnomaly) {
+    score  = ml.confidence > 0.6 ? 1.0 : 0.90;
+    status = ml.confidence > 0.6 ? 'NORMAL' : 'ACCEPTABLE';
   } else {
-    score = 0.30;
-    status = 'OUTLIER';
+    if      (ml.confidence < 0.30) { score = 0.70; status = 'QUESTIONABLE'; }
+    else if (ml.confidence < 0.60) { score = 0.50; status = 'SUSPICIOUS';   }
+    else                            { score = 0.20; status = 'OUTLIER';      }
   }
 
   return {
-    score: parseFloat(score.toFixed(4)),
+    score:        parseFloat(score.toFixed(4)),
     status,
-    zScore: parseFloat(z.toFixed(2)),
-    mean: parseFloat(mean.toFixed(2)),
-    stdDev: parseFloat(stdDev.toFixed(2)),
-    reason: status === 'OUTLIER' ? `Statistical outlier: Z-score ${z.toFixed(2)} (>3σ)` : null
+    // ML-specific fields (exposed in API response)
+    method:       ml.method,
+    anomalyScore: ml.score,
+    isAnomaly:    ml.isAnomaly,
+    confidence:   ml.confidence,
+    trainedOn:    ml.trainedOn,
+    trainedAt:    ml.trainedAt,
+    featureVector:ml.featureVector,
+    // Legacy fields nulled (was Z-score)
+    zScore:  null,
+    mean:    null,
+    stdDev:  null,
+    reason:  ml.isAnomaly
+      ? `ML Isolation Forest anomaly (score=${ml.score.toFixed(3)}, confidence=${(ml.confidence*100).toFixed(0)}%)`
+      : null
   };
 }
+
+// ============================================
+// LAYER 5 — DEVICE CONSISTENCY
+// ============================================
 
 function validateConsistency(reading, deviceProfile = {}) {
-  const {
-    capacity = 1000,
-    maxFlow = 10,
-    maxHead = 500,
-    minEfficiency = 0.70
-  } = deviceProfile;
-
-  // GRADUATED SCORING (Enhanced AI)
+  const { capacity = 1000, maxFlow = 10, maxHead = 500, minEfficiency = 0.70 } = deviceProfile;
   let score = 1.0;
   const details = {};
 
-  // Capacity check
-  if (reading.generatedKwh <= capacity) {
-    details.capacity = { status: 'OK', score: 1.0 };
-  } else {
-    details.capacity = { status: 'EXCEEDS', score: 0.50 };
-    score *= 0.50;
-  }
+  if (reading.generatedKwh      <= capacity)   { details.capacity   = { status: 'OK',          score: 1.00 }; }
+  else                                          { details.capacity   = { status: 'EXCEEDS',      score: 0.50 }; score *= 0.50; }
 
-  // Flow check
-  if (reading.flowRate_m3_per_s <= maxFlow) {
-    details.flow = { status: 'OK', score: 1.0 };
-  } else {
-    details.flow = { status: 'EXCEEDS', score: 0.50 };
-    score *= 0.50;
-  }
+  if (reading.flowRate_m3_per_s  <= maxFlow)   { details.flow       = { status: 'OK',          score: 1.00 }; }
+  else                                          { details.flow       = { status: 'EXCEEDS',      score: 0.50 }; score *= 0.50; }
 
-  // Head check
-  if (reading.headHeight_m <= maxHead) {
-    details.head = { status: 'OK', score: 1.0 };
-  } else {
-    details.head = { status: 'EXCEEDS', score: 0.50 };
-    score *= 0.50;
-  }
+  if (reading.headHeight_m       <= maxHead)   { details.head       = { status: 'OK',          score: 1.00 }; }
+  else                                          { details.head       = { status: 'EXCEEDS',      score: 0.50 }; score *= 0.50; }
 
-  // Efficiency check
   const eff = reading.efficiency ?? 0.85;
-  if (eff >= minEfficiency && eff <= 0.95) {
-    details.efficiency = { status: 'OK', score: 1.0 };
-  } else {
-    details.efficiency = { status: 'OUT_OF_RANGE', score: 0.70 };
-    score *= 0.70;
-  }
+  if (eff >= minEfficiency && eff <= 0.95)     { details.efficiency = { status: 'OK',          score: 1.00 }; }
+  else                                          { details.efficiency = { status: 'OUT_OF_RANGE', score: 0.70 }; score *= 0.70; }
 
   let status = 'PASS';
-  if (score < 0.50) status = 'FAIL';
+  if      (score < 0.50) status = 'FAIL';
   else if (score < 0.85) status = 'WARN';
 
-  return {
-    score: parseFloat(score.toFixed(4)),
-    status,
-    details,
-    reason: status === 'FAIL' ? 'Device consistency check failed' : null
-  };
+  return { score: parseFloat(score.toFixed(4)), status, details, reason: status === 'FAIL' ? 'Device consistency failed' : null };
 }
 
+// ============================================
+// WEIGHTED TRUST SCORE (5 layers)
+// ============================================
+
 function calculateTrustScore(results) {
-  // ENHANCED WEIGHTS (5 components)
-  const weights = {
-    physics: 0.30,
-    temporal: 0.25,
-    environmental: 0.20,
-    statistical: 0.15,
-    consistency: 0.10
-  };
-
-  const trust =
-    results.physics.score * weights.physics +
-    results.temporal.score * weights.temporal +
-    results.environmental.score * weights.environmental +
-    results.statistical.score * weights.statistical +
-    results.consistency.score * weights.consistency;
-
-  return parseFloat(trust.toFixed(4));
+  const weights = { physics: 0.30, temporal: 0.25, environmental: 0.20, statistical: 0.15, consistency: 0.10 };
+  return parseFloat((
+    results.physics.score      * weights.physics      +
+    results.temporal.score     * weights.temporal     +
+    results.environmental.score* weights.environmental +
+    results.statistical.score  * weights.statistical  +
+    results.consistency.score  * weights.consistency
+  ).toFixed(4));
 }
 
 function determineVerificationStatus(trustScore, config = {}) {
-  const autoApproveThreshold = config.autoApproveThreshold ?? 0.90;
-  const manualReviewThreshold = config.manualReviewThreshold ?? 0.50;
-
+  const autoApprove    = config.autoApproveThreshold    ?? 0.90;
+  const manualReview   = config.manualReviewThreshold   ?? 0.50;
   let status, method, reasoning;
 
-  if (trustScore >= autoApproveThreshold) {
-    status = "APPROVED";
-    method = "AI_AUTO_APPROVED";
-    reasoning = `High confidence (${(trustScore * 100).toFixed(1)}%). All checks passed.`;
-  } else if (trustScore >= manualReviewThreshold) {
-    status = "FLAGGED";
-    method = "MANUAL_REVIEW_REQUIRED";
-    reasoning = `Medium confidence (${(trustScore * 100).toFixed(1)}%). Some checks questionable.`;
-  } else {
-    status = "REJECTED";
-    method = "FAILED_VERIFICATION";
-    reasoning = `Low confidence (${(trustScore * 100).toFixed(1)}%). Multiple checks failed.`;
-  }
+  if      (trustScore >= autoApprove)  { status = 'APPROVED'; method = 'AI_AUTO_APPROVED';    reasoning = `High confidence (${(trustScore*100).toFixed(1)}%). All checks passed.`;              }
+  else if (trustScore >= manualReview) { status = 'FLAGGED';  method = 'MANUAL_REVIEW_REQUIRED'; reasoning = `Medium confidence (${(trustScore*100).toFixed(1)}%). Some checks questionable.`;  }
+  else                                  { status = 'REJECTED'; method = 'FAILED_VERIFICATION';   reasoning = `Low confidence (${(trustScore*100).toFixed(1)}%). Multiple checks failed.`;        }
 
   return { status, method, reasoning };
 }
+
+// ============================================
+// ACM0002 CARBON CALCULATIONS
+// ============================================
 
 function calculateBaselineEmissions(egMWh, efGrid) {
   return parseFloat((egMWh * efGrid).toFixed(6));
@@ -387,139 +297,108 @@ function calculateEmissionReductions(be, pe = 0, le = 0) {
 }
 
 // ============================================
-// ENHANCED ENGINE V1 CLASS
+// ENGINE V1 CLASS
 // ============================================
 
 class EngineV1 {
   constructor(config = {}) {
     this.config = {
-      autoApproveThreshold: 0.90,
+      autoApproveThreshold:  0.90,
       manualReviewThreshold: 0.50,
-      siteConfig: {},
-      deviceProfile: {
-        capacity: 1000,
-        maxFlow: 10,
-        maxHead: 500,
-        minEfficiency: 0.70
-      },
+      siteConfig:   {},
+      deviceProfile: { capacity: 1000, maxFlow: 10, maxHead: 500, minEfficiency: 0.70 },
       ...config
     };
     this.historyByDevice = new Map();
   }
 
   getHistory(deviceId) {
-    if (!this.historyByDevice.has(deviceId)) {
-      this.historyByDevice.set(deviceId, []);
-    }
+    if (!this.historyByDevice.has(deviceId)) this.historyByDevice.set(deviceId, []);
     return this.historyByDevice.get(deviceId);
   }
 
   async verifyAndPublish(telemetry) {
     const deviceId = telemetry.deviceId;
-    const history = this.getHistory(deviceId);
+    const history  = this.getHistory(deviceId);
     const previous = history[history.length - 1];
 
-    // Run all 5 validation checks
-    const physics = validatePhysicsConstraints(telemetry.readings);
-    const temporal = validateTemporalConsistency(telemetry.readings, previous);
+    // ── Run 5 verification layers ──────────────────────────────────
+    const physics       = validatePhysicsConstraints(telemetry.readings);
+    const temporal      = validateTemporalConsistency(telemetry.readings, previous);
     const environmental = validateEnvironmentalBounds(telemetry.readings, this.config.siteConfig);
-    const statistical = detectStatisticalAnomalies(telemetry.readings, history);
-    const consistency = validateConsistency(telemetry.readings, this.config.deviceProfile);
+    const statistical   = detectStatisticalAnomalies(telemetry.readings, history);  // ← REAL ML
+    const consistency   = validateConsistency(telemetry.readings, this.config.deviceProfile);
 
     const validationResults = { physics, temporal, environmental, statistical, consistency };
-    const trustScore = calculateTrustScore(validationResults);
-    const decision = determineVerificationStatus(trustScore, this.config);
+    const trustScore        = calculateTrustScore(validationResults);
+    const decision          = determineVerificationStatus(trustScore, this.config);
 
-    // ACM0002 calculations
+    // ── ACM0002 carbon calculations ───────────────────────────────
     const egMWh = telemetry.readings.generatedKwh / 1000;
-    const be = calculateBaselineEmissions(egMWh, EF_GRID);
-    const er = calculateEmissionReductions(be, 0, 0);
+    const be    = calculateBaselineEmissions(egMWh, EF_GRID);
+    const er    = calculateEmissionReductions(be, 0, 0);
 
     const attestation = {
       deviceId,
-      timestamp: telemetry.timestamp,
+      timestamp:          telemetry.timestamp,
       verificationStatus: decision.status,
       verificationMethod: decision.method,
       trustScore,
-      reasoning: decision.reasoning,
-      checks: {
-        physics,
-        temporal,
-        environmental,
-        statistical,
-        consistency
+      reasoning:          decision.reasoning,
+      mlEngine: {
+        algorithm:  'IsolationForest',
+        reference:  'Liu, Ting & Zhou, ICDM 2008',
+        trainedOn:  statistical.trainedOn,
+        trainedAt:  statistical.trainedAt
       },
+      checks: { physics, temporal, environmental, statistical, consistency },
       calculations: {
-        EG_MWh: parseFloat(egMWh.toFixed(6)),
+        EG_MWh:              parseFloat(egMWh.toFixed(6)),
         EF_grid_tCO2_per_MWh: EF_GRID,
-        BE_tCO2: be,
-        PE_tCO2: 0,
-        LE_tCO2: 0,
-        ER_tCO2: er,
-        RECs_issued: decision.status === "APPROVED" ? er : 0
+        BE_tCO2:             be,
+        PE_tCO2:             0,
+        LE_tCO2:             0,
+        ER_tCO2:             er,
+        RECs_issued:         decision.status === 'APPROVED' ? er : 0
       }
     };
 
-    // Lazy init Hedera client
-    const hedera = getClient();
+    // ── Hedera HCS publish ─────────────────────────────────────────
+    const hedera     = getClient();
     const auditTopicId = getAuditTopicId();
-
-    // Try HCS publish if available
     let transactionId = `mock-${Date.now()}`;
-    let status = 'MOCK';
+    let status        = 'MOCK';
 
     if (hedera && auditTopicId) {
       try {
         const topicId = TopicId.fromString(auditTopicId);
         const message = Buffer.from(JSON.stringify(attestation));
-
         const tx = await new TopicMessageSubmitTransaction()
           .setTopicId(topicId)
           .setMessage(message)
           .freezeWith(hedera.client)
           .sign(hedera.operatorKey);
-
-        const resp = await tx.execute(hedera.client);
+        const resp    = await tx.execute(hedera.client);
         const receipt = await resp.getReceipt(hedera.client);
-
         transactionId = resp.transactionId.toString();
-        status = receipt.status.toString();
+        status        = receipt.status.toString();
       } catch (error) {
         console.warn(`[EngineV1] HCS submission failed: ${error.message}`);
       }
     }
 
-    // Update history
     history.push(telemetry.readings);
-
-    return {
-      attestation,
-      transactionId,
-      status
-    };
+    return { attestation, transactionId, status };
   }
 
   async verifyBatch(telemetryArray) {
-    const results = [];
-    
-    for (const telemetry of telemetryArray) {
-      const result = await this.verifyAndPublish(telemetry);
-      results.push(result);
-    }
-
+    const results  = [];
+    for (const t of telemetryArray) results.push(await this.verifyAndPublish(t));
     const approved = results.filter(r => r.attestation.verificationStatus === 'APPROVED').length;
-    const flagged = results.filter(r => r.attestation.verificationStatus === 'FLAGGED').length;
+    const flagged  = results.filter(r => r.attestation.verificationStatus === 'FLAGGED').length;
     const rejected = results.filter(r => r.attestation.verificationStatus === 'REJECTED').length;
-    const avgTrust = results.reduce((sum, r) => sum + r.attestation.trustScore, 0) / results.length;
-
-    return {
-      totalReadings: results.length,
-      approved,
-      flagged,
-      rejected,
-      averageTrustScore: parseFloat(avgTrust.toFixed(4)),
-      results
-    };
+    const avgTrust = results.reduce((s, r) => s + r.attestation.trustScore, 0) / results.length;
+    return { totalReadings: results.length, approved, flagged, rejected, averageTrustScore: parseFloat(avgTrust.toFixed(4)), results };
   }
 }
 
@@ -529,61 +408,45 @@ class EngineV1 {
 
 async function main() {
   const args = process.argv.slice(2);
-  const cmd = args[0];
+  const cmd  = args[0];
 
-  if (cmd === "submit") {
-    const deviceId = args[1] || "TURBINE-1";
-    const flow = parseFloat(args[2] || "2.5");
-    const head = parseFloat(args[3] || "45");
-    const gen = parseFloat(args[4] || "156");
-    const ph = parseFloat(args[5] || "7.2");
+  if (cmd === 'submit') {
+    const deviceId = args[1] || 'TURBINE-1';
+    const flow     = parseFloat(args[2] || '2.5');
+    const head     = parseFloat(args[3] || '45');
+    const gen      = parseFloat(args[4] || '156');
+    const ph       = parseFloat(args[5] || '7.2');
 
-    const engine = new EngineV1();
-
+    const engine   = new EngineV1();
     const telemetry = {
       deviceId,
       timestamp: new Date().toISOString(),
-      readings: {
-        flowRate_m3_per_s: flow,
-        headHeight_m: head,
-        generatedKwh: gen,
-        pH: ph,
-        turbidity_ntu: 10,
-        temperature_celsius: 18
-      }
+      readings:  { flowRate_m3_per_s: flow, headHeight_m: head, generatedKwh: gen, pH: ph, turbidity_ntu: 10, temperature_celsius: 18 }
     };
 
-    console.log("Submitting telemetry:", telemetry);
-
+    console.log('Submitting telemetry:', telemetry);
     try {
       const result = await engine.verifyAndPublish(telemetry);
-
-      console.log("\n=== ENGINE V1 RESULT ===");
-      console.log("Decision:", result.attestation.verificationStatus);
-      console.log("Trust Score:", result.attestation.trustScore);
-      console.log("ER (tCO2):", result.attestation.calculations.ER_tCO2);
-      console.log("RECs issued (tCO2):", result.attestation.calculations.RECs_issued);
-      console.log("Hedera TX:", result.transactionId);
-      console.log("Status:", result.status);
-      console.log("Audit Topic:", getAuditTopicId() || 'N/A');
+      console.log('\n=== ENGINE V1 RESULT ===');
+      console.log('Decision:    ', result.attestation.verificationStatus);
+      console.log('Trust Score: ', result.attestation.trustScore);
+      console.log('ML Method:   ', result.attestation.mlEngine.algorithm);
+      console.log('ML Status:   ', result.attestation.checks.statistical.status);
+      console.log('ML Score:    ', result.attestation.checks.statistical.anomalyScore);
+      console.log('ER (tCO2):   ', result.attestation.calculations.ER_tCO2);
+      console.log('RECs issued: ', result.attestation.calculations.RECs_issued);
+      console.log('Hedera TX:   ', result.transactionId);
     } catch (err) {
-      console.error("Submission failed:", err.message);
+      console.error('Submission failed:', err.message);
     }
-
     const hedera = getClient();
-    if (hedera && hedera.client) {
-      await hedera.client.close();
-    }
+    if (hedera && hedera.client) await hedera.client.close();
   } else {
-    console.log("Usage:");
-    console.log("node engine-v1.js submit <deviceId> <flow> <head> <generatedKwh> <pH>");
-    console.log("Example:");
-    console.log("node engine-v1.js submit TURBINE-1 2.5 45 156 7.2");
+    console.log('Usage:   node engine-v1.js submit <deviceId> <flow> <head> <generatedKwh> <pH>');
+    console.log('Example: node engine-v1.js submit TURBINE-1 2.5 45 156 7.2');
   }
 }
 
-if (require.main === module) {
-  main().catch(console.error);
-}
+if (require.main === module) main().catch(console.error);
 
 module.exports = { EngineV1 };
