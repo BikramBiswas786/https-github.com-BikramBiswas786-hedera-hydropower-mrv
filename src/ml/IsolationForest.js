@@ -16,6 +16,10 @@
  *   3. Anomalies are isolated faster (shorter average path length).
  *   4. Anomaly score = 2^(-E[h(x)] / c(n))  where c(n) is the average
  *      path length of an unsuccessful BST search.
+ *
+ * **Explainable AI:**
+ *   - explainScore() perturbs each feature and measures score change
+ *   - Returns feature importance (which features triggered the anomaly)
  */
 
 const EULER_MASCHERONI = 0.5772156649;
@@ -95,7 +99,7 @@ function computePathLength(node, sample, depth) {
   return computePathLength(node.right, sample, depth + 1);
 }
 
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────
 
 class IsolationForest {
   /**
@@ -181,6 +185,72 @@ class IsolationForest {
       isAnomaly,
       confidence: parseFloat(confidence.toFixed(4)),
       threshold:  parseFloat(this.threshold.toFixed(6))
+    };
+  }
+
+  /**
+   * Explain which features contributed most to anomaly detection.
+   * Uses local perturbation method (LIME-like).
+   * @param {number[]} sample - Normalised feature vector
+   * @returns {{
+   *   score: number,
+   *   isAnomaly: boolean,
+   *   featureImportance: Array<{ feature: string, importance: number, normalized: number }>
+   * }}
+   */
+  explainScore(sample) {
+    if (!this.trained) throw new Error('[IsolationForest] Call fit() before explainScore()');
+
+    const baselineScore = this._rawAnomalyScore(sample);
+    const isAnomaly = baselineScore > this.threshold;
+    const featureImportances = [];
+
+    // Perturb each feature and measure score change
+    for (let i = 0; i < sample.length; i++) {
+      const perturbed = sample.slice();
+      const original = perturbed[i];
+
+      // Perturbation strategy: move toward 0.5 (middle of [0,1] range)
+      // If near boundaries, perturb more aggressively
+      if (original < 0.3) {
+        perturbed[i] = Math.min(1, original + 0.2);
+      } else if (original > 0.7) {
+        perturbed[i] = Math.max(0, original - 0.2);
+      } else {
+        perturbed[i] = 0.5;  // Move to middle
+      }
+
+      const perturbedScore = this._rawAnomalyScore(perturbed);
+      const importance = Math.abs(perturbedScore - baselineScore);
+
+      featureImportances.push({
+        featureIndex: i,
+        feature: this.featureNames ? this.featureNames[i] : `feature_${i}`,
+        importance: parseFloat(importance.toFixed(4)),
+        originalValue: parseFloat(original.toFixed(4)),
+        perturbedValue: parseFloat(perturbed[i].toFixed(4)),
+        scoreChange: parseFloat((perturbedScore - baselineScore).toFixed(4))
+      });
+    }
+
+    // Sort by importance descending
+    featureImportances.sort((a, b) => b.importance - a.importance);
+
+    // Normalize importances to sum to 1.0
+    const totalImportance = featureImportances.reduce((sum, f) => sum + f.importance, 0);
+    if (totalImportance > 0) {
+      featureImportances.forEach(f => {
+        f.normalized = parseFloat((f.importance / totalImportance).toFixed(4));
+      });
+    } else {
+      featureImportances.forEach(f => { f.normalized = 0; });
+    }
+
+    return {
+      score: parseFloat(baselineScore.toFixed(6)),
+      isAnomaly,
+      threshold: parseFloat(this.threshold.toFixed(6)),
+      featureImportance: featureImportances
     };
   }
 
