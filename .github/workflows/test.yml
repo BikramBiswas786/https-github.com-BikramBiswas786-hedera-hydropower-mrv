@@ -2,48 +2,31 @@ name: CI — Hedera Hydropower MRV Tests
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   test:
-    name: Run Test Suite (Node 18)
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [18.x]
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
-      - name: Setup Node.js 18
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          # cache: 'npm'  # Disabled due to repo name path issues
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
 
-      - name: Install dependencies
-        run: npm ci
+    - name: Install dependencies
+      run: npm ci
 
-      - name: Pre-train ML model (Isolation Forest)
-        run: npm run ml:train
-        env:
-          NODE_ENV: test
+    - name: Train ML model (monsoon-aware)
+      run: npm run ml:train
 
-      - name: Run all tests
-        run: npm test -- --forceExit --testTimeout=30000
-        env:
-          HEDERA_OPERATOR_ID:  ${{ secrets.HEDERA_OPERATOR_ID  || '0.0.6255927' }}
-          HEDERA_OPERATOR_KEY: ${{ secrets.HEDERA_OPERATOR_KEY || '' }}
-          AUDIT_TOPIC_ID:      ${{ secrets.AUDIT_TOPIC_ID      || '0.0.7964262' }}
-          REC_TOKEN_ID:        ${{ secrets.REC_TOKEN_ID        || '0.0.7964264' }}
-          EF_GRID:             ${{ secrets.EF_GRID             || '0.8' }}
-          NODE_ENV:            test
-
-      - name: Run demo script (mock mode — no live credentials required)
-        run: node scripts/demo.js
-        env:
-          HEDERA_OPERATOR_ID: '0.0.6255927'
-          AUDIT_TOPIC_ID:     '0.0.7964262'
-          REC_TOKEN_ID:       '0.0.7964264'
-          EF_GRID:            '0.8'
-          # HEDERA_OPERATOR_KEY intentionally omitted → triggers MOCK MODE
+    - name: Run all tests
+      run: npm test -- --forceExit --testTimeout=30000
