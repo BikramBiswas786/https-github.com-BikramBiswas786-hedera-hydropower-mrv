@@ -1,8 +1,9 @@
 ﻿{
-    "env":  {
-                "NODE_ENV":  "production"
-            },
     "builds":  [
+                   {
+                       "src":  "public/**",
+                       "use":  "@vercel/static"
+                   },
                    {
                        "src":  "src/api/server.js",
                        "use":  "@vercel/node"
@@ -10,7 +11,15 @@
                ],
     "routes":  [
                    {
-                       "src":  "/(.*)",
+                       "src":  "/",
+                       "dest":  "/public/index.html"
+                   },
+                   {
+                       "src":  "/api/(.*)",
+                       "dest":  "src/api/server.js"
+                   },
+                   {
+                       "src":  "/(health|metrics|features)",
                        "dest":  "src/api/server.js"
                    }
                ],
