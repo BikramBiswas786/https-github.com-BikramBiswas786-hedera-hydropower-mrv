@@ -1,18 +1,20 @@
 /**
  * Tenant Management API - Multi-Tenant SaaS Foundation
  * 
- * PURPOSE: Self-service onboarding, licensing, and billing for operators
+ * PURPOSE: Self-service onboarding, licensing for operators
  * STATUS: MVP implementation (in-memory, ready for production)
  * REVENUE: Enables ₹15.73-220.95 Cr/year from platform licensing
  * 
- * ENDPOINTS:
- *   POST   /api/v1/tenants/create          - Create new tenant (signup)
- *   POST   /api/v1/tenants/validate        - Validate license key
- *   GET    /api/v1/tenants/me              - Get current tenant info
- *   POST   /api/v1/subscriptions/subscribe - Subscribe to tier
- *   GET    /api/v1/subscriptions/me        - Get active subscription
- *   POST   /api/v1/billing/meters          - Record transaction for billing
- *   GET    /api/v1/billing/usage           - Get usage stats
+ * ENDPOINTS (THIS FILE):
+ *   POST   /api/v1/tenants/create    - Create new tenant (signup)
+ *   POST   /api/v1/tenants/validate  - Validate license key
+ *   GET    /api/v1/tenants/me        - Get current tenant info
+ *   GET    /api/v1/tenants/pricing   - Public pricing tiers
+ *   GET    /api/v1/tenants/stats     - Admin statistics
+ * 
+ * OTHER ROUTES (SEPARATE FILES):
+ *   Subscriptions: src/api/v1/subscriptions.js
+ *   Billing: src/api/v1/billing.js
  */
 
 const express = require('express');
@@ -288,164 +290,6 @@ router.get('/stats', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// SUBSCRIPTION ENDPOINTS
-// ═══════════════════════════════════════════════════════════════
-
-/**
- * POST /api/v1/subscriptions/subscribe
- * Subscribe to or change tier
- * 
- * Body: { tier }
- */
-router.post('/subscriptions/subscribe', async (req, res) => {
-  try {
-    const licenseKey = req.headers['x-license-key'];
-    const { tier } = req.body;
-
-    if (!licenseKey) {
-      return res.status(401).json({ error: 'Missing x-license-key header' });
-    }
-
-    if (!tier || !['starter', 'pro', 'enterprise'].includes(tier)) {
-      return res.status(400).json({
-        error: 'Invalid tier',
-        valid_tiers: ['starter', 'pro', 'enterprise']
-      });
-    }
-
-    const tenant = await tenantStore.findByLicenseKey(licenseKey);
-    if (!tenant) {
-      return res.status(404).json({ error: 'Tenant not found' });
-    }
-
-    const subscription = await subscriptionStore.create(tenant.id, tier);
-
-    res.json({
-      status: 'success',
-      message: 'Subscription created successfully',
-      subscription: {
-        id: subscription.id,
-        tier: subscription.tier,
-        annual_fee_inr: subscription.annual_fee,
-        billing_date: subscription.billing_date,
-        status: subscription.status
-      }
-    });
-  } catch (error) {
-    console.error('[SUBSCRIPTION ERROR]', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * GET /api/v1/subscriptions/me
- * Get active subscription
- */
-router.get('/subscriptions/me', async (req, res) => {
-  try {
-    const licenseKey = req.headers['x-license-key'];
-
-    if (!licenseKey) {
-      return res.status(401).json({ error: 'Missing x-license-key header' });
-    }
-
-    const tenant = await tenantStore.findByLicenseKey(licenseKey);
-    if (!tenant) {
-      return res.status(404).json({ error: 'Tenant not found' });
-    }
-
-    const subscription = await subscriptionStore.findByTenantId(tenant.id);
-
-    res.json({
-      status: 'success',
-      subscription: subscription || null
-    });
-  } catch (error) {
-    console.error('[SUBSCRIPTION GET ERROR]', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ═══════════════════════════════════════════════════════════════
-// BILLING & METERING ENDPOINTS
-// ═══════════════════════════════════════════════════════════════
-
-/**
- * POST /api/v1/billing/meters
- * Record transaction for billing (internal use)
- * 
- * Body: { tenantId, type, costUsd, costInr }
- */
-router.post('/billing/meters', async (req, res) => {
-  try {
-    const { tenantId, type, costUsd, costInr } = req.body;
-
-    if (!tenantId || !type) {
-      return res.status(400).json({
-        error: 'Missing required fields',
-        required: ['tenantId', 'type']
-      });
-    }
-
-    const transaction = await transactionStore.record(
-      tenantId,
-      type,
-      costUsd || 0,
-      costInr || 0
-    );
-
-    res.json({
-      status: 'success',
-      transaction_id: transaction.id
-    });
-  } catch (error) {
-    console.error('[BILLING METER ERROR]', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * GET /api/v1/billing/usage
- * Get usage and billing stats
- * Query: ?periodStart=ISO8601&periodEnd=ISO8601
- */
-router.get('/billing/usage', async (req, res) => {
-  try {
-    const licenseKey = req.headers['x-license-key'];
-
-    if (!licenseKey) {
-      return res.status(401).json({ error: 'Missing x-license-key header' });
-    }
-
-    const tenant = await tenantStore.findByLicenseKey(licenseKey);
-    if (!tenant) {
-      return res.status(404).json({ error: 'Tenant not found' });
-    }
-
-    const { periodStart, periodEnd } = req.query;
-    const usage = await transactionStore.getUsageByTenantId(
-      tenant.id,
-      periodStart,
-      periodEnd
-    );
-
-    res.json({
-      status: 'success',
-      tenant_id: tenant.id,
-      period: {
-        start: periodStart || 'all time',
-        end: periodEnd || 'now'
-      },
-      ...usage,
-      transactions: undefined // Don't return full transaction list
-    });
-  } catch (error) {
-    console.error('[BILLING USAGE ERROR]', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ═══════════════════════════════════════════════════════════════
 // PRICING INFO ENDPOINT (PUBLIC)
 // ═══════════════════════════════════════════════════════════════
 
@@ -518,8 +362,8 @@ router.get('/pricing', (req, res) => {
 
 module.exports = {
   router,
-  transactionStore, // Export for use in Hedera client wrapper
-  subscriptionStore,
+  transactionStore, // Export for billing.js
+  subscriptionStore, // Export for subscriptions.js
 
   // Helper function to record Hedera transaction cost
   async recordHederaTransaction(tenantId, type, hbarCost) {
