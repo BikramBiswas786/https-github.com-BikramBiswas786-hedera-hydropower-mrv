@@ -13,11 +13,14 @@
  *   [3] pH                    raw sensor
  *   [4] turbidity_ntu          raw sensor
  *   [5] temperature_celsius    raw sensor
- *   [6] powerDensity           derived: kW / (Q * H)
+ *   [6] powerDensity           derived: kW / (Q × H)
  *   [7] efficiencyRatio        derived: actual / theoretical power
  *
  * On first instantiation the model auto-trains on 2000 synthetic
  * samples (< 400 ms).  Use loadModel() / saveModel() for persistence.
+ *
+ * **Explainability:**
+ *   detectWithExplanation() returns which features triggered anomaly.
  */
 
 const fs   = require('fs');
@@ -25,7 +28,7 @@ const path = require('path');
 const { IsolationForest }      = require('./IsolationForest');
 const { generateDataset }      = require('./SyntheticDataGenerator');
 
-// ─── Feature config ────────────────────────────────────────────────
+// ─── Feature config ──────────────────────────────────────
 
 const FEATURE_NAMES = [
   'flowRate_m3_per_s',
@@ -53,7 +56,7 @@ const BOUNDS = {
 const RHO = 1000;
 const G   = 9.81;
 
-// ─── Feature extraction ────────────────────────────────────────────
+// ─── Feature extraction ──────────────────────────────────────
 
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
@@ -65,7 +68,7 @@ function normalise(value, min, max) {
 /**
  * Convert a raw reading object into a normalised feature vector.
  * @param {object} reading
- * @returns {number[]}  8-element vector in [0,1]
+ * @returns {{ features: number[], raw: object }}  Normalised vector + raw values
  */
 function extractFeatures(reading) {
   const flow   = reading.flowRate_m3_per_s || 0;
@@ -93,12 +96,14 @@ function extractFeatures(reading) {
     efficiencyRatio
   };
 
-  return FEATURE_NAMES.map(name =>
+  const features = FEATURE_NAMES.map(name =>
     normalise(raw[name], BOUNDS[name].min, BOUNDS[name].max)
   );
+
+  return { features, raw };
 }
 
-// ─── MLAnomalyDetector class ───────────────────────────────────────
+// ─── MLAnomalyDetector class ───────────────────────────────────
 
 class MLAnomalyDetector {
   /**
@@ -163,7 +168,7 @@ class MLAnomalyDetector {
     const dataset = generateDataset(this._options.trainSamples);
     // Isolation Forest is UNSUPERVISED — train only on normal samples
     const normal   = dataset.filter(d => d.label === 'normal');
-    const features = normal.map(d => extractFeatures(d.reading));
+    const features = normal.map(d => extractFeatures(d.reading).features);
 
     this._model = new IsolationForest({
       nTrees:        this._options.nTrees,
@@ -183,7 +188,7 @@ class MLAnomalyDetector {
     );
   }
 
-  // ── Public API ────────────────────────────────────────────────────
+  // ── Public API ────────────────────────────────────────────
 
   /**
    * Detect anomaly in a single reading.
@@ -209,7 +214,7 @@ class MLAnomalyDetector {
       };
     }
 
-    const features = extractFeatures(reading);
+    const { features } = extractFeatures(reading);
     const result   = this._model.score(features);
 
     return {
@@ -226,6 +231,64 @@ class MLAnomalyDetector {
   }
 
   /**
+   * Detect anomaly AND explain which features triggered it.
+   * @param {object} reading - Raw telemetry reading
+   * @returns {{
+   *   score: number,
+   *   isAnomaly: boolean,
+   *   method: string,
+   *   explanation: {
+   *     topFeatures: Array<{ feature: string, importance: number, value: number }>,
+   *     summary: string
+   *   }
+   * }}
+   */
+  detectWithExplanation(reading) {
+    if (!this._trained || !this._model) {
+      return {
+        score:      0.5,
+        isAnomaly:  false,
+        method:     'FALLBACK_NOT_READY',
+        explanation: { topFeatures: [], summary: 'Model not trained' }
+      };
+    }
+
+    const { features, raw } = extractFeatures(reading);
+    const explanation   = this._model.explainScore(features);
+
+    // Get top 3 features by importance
+    const topFeatures = explanation.featureImportance.slice(0, 3).map(f => ({
+      feature:    f.feature,
+      importance: f.normalized,
+      value:      parseFloat(raw[f.feature].toFixed(3)),
+      normalizedValue: f.originalValue
+    }));
+
+    // Generate human-readable summary
+    const featureList = topFeatures
+      .map(f => `${f.feature} (${(f.importance * 100).toFixed(0)}%)`)
+      .join(', ');
+    const summary = explanation.isAnomaly
+      ? `Anomaly triggered by: ${featureList}`
+      : `Normal reading. Top features: ${featureList}`;
+
+    return {
+      score:         explanation.score,
+      isAnomaly:     explanation.isAnomaly,
+      threshold:     explanation.threshold,
+      confidence:    topFeatures.length > 0 ? topFeatures[0].importance : 0,
+      method:        'ISOLATION_FOREST_ML',
+      trainedOn:     this._trainedOn,
+      trainedAt:     this._trainedAt,
+      explanation: {
+        topFeatures,
+        allFeatures: explanation.featureImportance,
+        summary
+      }
+    };
+  }
+
+  /**
    * Retrain on new data (call after collecting real pilot readings).
    * @param {object[]} readings - Array of raw telemetry readings (normal only)
    */
@@ -233,7 +296,7 @@ class MLAnomalyDetector {
     if (!readings || readings.length < 50) {
       throw new Error('[MLAnomalyDetector] Need at least 50 readings to retrain');
     }
-    const features = readings.map(r => extractFeatures(r));
+    const features = readings.map(r => extractFeatures(r).features);
     this._model = new IsolationForest({
       nTrees:        this._options.nTrees,
       sampleSize:    Math.min(this._options.sampleSize, features.length),
