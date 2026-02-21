@@ -12,6 +12,7 @@
  */
 
 const express = require('express');
+const { Client, AccountId, PrivateKey } = require('@hashgraph/sdk');
 const { CarbonCreditManager } = require('./CarbonCreditManager');
 const { VerraIntegration } = require('./VerraIntegration');
 const { GoldStandardIntegration } = require('./GoldStandardIntegration');
@@ -19,10 +20,49 @@ const { CarbonMarketplace } = require('./CarbonMarketplace');
 
 const router = express.Router();
 
+// Initialize Hedera client if USE_REAL_HEDERA=true
+let hederaClient = null;
+
+if (process.env.USE_REAL_HEDERA === 'true') {
+  try {
+    const operatorId = process.env.HEDERA_OPERATOR_ID || process.env.HEDERA_ACCOUNT_ID;
+    const operatorKey = process.env.HEDERA_OPERATOR_KEY || process.env.HEDERA_PRIVATE_KEY;
+    const network = process.env.HEDERA_NETWORK || 'testnet';
+
+    if (operatorId && operatorKey) {
+      if (network === 'mainnet') {
+        hederaClient = Client.forMainnet();
+      } else {
+        hederaClient = Client.forTestnet();
+      }
+
+      hederaClient.setOperator(
+        AccountId.fromString(operatorId),
+        PrivateKey.fromString(operatorKey)
+      );
+
+      console.log(`[CARBON CREDITS] ✅ Real Hedera client initialized (${network})`);
+      console.log(`[CARBON CREDITS] 🔥 REAL on-chain minting ENABLED`);
+      console.log(`[CARBON CREDITS] 📊 Token ID: ${process.env.CARBON_TOKEN_ID}`);
+    } else {
+      console.log('[CARBON CREDITS] ⚠️  Missing Hedera credentials - using mock mode');
+    }
+  } catch (error) {
+    console.error('[CARBON CREDITS] ❌ Failed to initialize Hedera client:', error.message);
+    console.log('[CARBON CREDITS] ⚠️  Falling back to mock mode');
+    hederaClient = null;
+  }
+} else {
+  console.log('[CARBON CREDITS] 📝 Mock mode (set USE_REAL_HEDERA=true for real minting)');
+}
+
 const verra = new VerraIntegration();
 const goldStandard = new GoldStandardIntegration();
 const marketplace = new CarbonMarketplace(verra, goldStandard);
-const manager = new CarbonCreditManager(null);
+const manager = new CarbonCreditManager(hederaClient, {
+  tokenId: process.env.CARBON_TOKEN_ID,
+  treasuryKey: process.env.TREASURY_PRIVATE_KEY
+});
 
 router.post('/calculate', async (req, res) => {
   try {
