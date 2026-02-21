@@ -10,9 +10,9 @@
 
 ---
 
-## 🎉 **SYSTEM IS LIVE!**
+##  **SYSTEM IS LIVE!**
 
-🎮 **[View Complete Live Demo Results](./LIVE_DEMO_RESULTS.md)** — Real transactions, fraud detection, and carbon credit calculations running on Hedera testnet.
+ **[View Complete Live Demo Results](./LIVE_DEMO_RESULTS.md)** — Real transactions, fraud detection, and carbon credit calculations running on Hedera testnet.
 
 **Quick Stats (Feb 21, 2026):**
 - ✅ **2+ Real Hedera Transactions** — [View on HashScan](https://hashscan.io/testnet/topic/0.0.7462776)
@@ -23,7 +23,7 @@
 
 ---
 
-## 🎯 Quick Start
+##  Quick Start
 
 ```bash
 # Clone and setup (< 5 minutes)
@@ -38,11 +38,11 @@ npm run api
 npm run demo
 ```
 
-**📚 [Complete Setup Guide](./QUICK_START.md)** | **📊 [Deployment Status](./DEPLOYMENT_STATUS.md)**
+** [Complete Setup Guide](./QUICK_START.md)** | **📊 [Deployment Status](./DEPLOYMENT_STATUS.md)**
 
 ---
 
-## 🌐 Live Demo
+##  Live Demo
 
 🔗 **Production Deployment:** [hydropower-mrv-19feb26.vercel.app](https://hydropower-mrv-19feb26.vercel.app/)
 
@@ -54,7 +54,7 @@ npm run demo
 
 ---
 
-## ✅ Production Status
+##  Production Status
 
 ### Current Capabilities
 
@@ -70,7 +70,7 @@ This system is **production-ready** and **deployed**:
 - ✅ **Fraud detection** validated (10x power inflation caught at 65% trust score)
 - ✅ **Local and cloud** environments operational
 
-### 🎯 Next Milestone: 6 MW Shadow Pilot
+###  Next Milestone: 6 MW Shadow Pilot
 
 **Target:** 90-day shadow-mode MRV for a 6 MW run-of-river plant in HP/UK
 
@@ -85,9 +85,9 @@ This system is **production-ready** and **deployed**:
 - vs Manual MRV: ₹1.25 lakh per quarter
 - **Savings: 60–70%**
 
-📄 **Full pilot plan:** See [`docs/PILOT_PLAN_6MW_PLANT.md`](docs/PILOT_PLAN_6MW_PLANT.md)
+ **Full pilot plan:** See [`docs/PILOT_PLAN_6MW_PLANT.md`](docs/PILOT_PLAN_6MW_PLANT.md)
 
-### 📋 Production Roadmap
+###  Production Roadmap
 
 We've closed all 5 critical production gaps:
 
@@ -102,11 +102,11 @@ We've closed all 5 critical production gaps:
 - ML model training on real data (Phase 2)
 - Multi-tenancy scoping (8–10 weeks to full SaaS)
 
-📄 **Full roadmap:** See [`PRODUCTION_READINESS_ROADMAP.md`](PRODUCTION_READINESS_ROADMAP.md)
+ **Full roadmap:** See [`PRODUCTION_READINESS_ROADMAP.md`](PRODUCTION_READINESS_ROADMAP.md)
 
 ---
 
-## 🌱 For Plant Operators
+##  For Plant Operators
 
 Want to pilot this system? See our [**6 MW Plant Integration Guide**](docs/PILOT_PLAN_6MW_PLANT.md) for:
 
@@ -119,7 +119,7 @@ Want to pilot this system? See our [**6 MW Plant Integration Guide**](docs/PILOT
 
 ---
 
-## 💼 For Enterprise Buyers / Investors
+##  For Enterprise Buyers / Investors
 
 This is not vaporware. We have **live proof**:
 
@@ -145,7 +145,7 @@ What separates this from other "blockchain MRV" projects:
 
 ---
 
-## 📋 Table of Contents
+##  Table of Contents
 
 - [Problem Statement](#problem-statement)
 - [Solution](#solution)
@@ -161,7 +161,7 @@ What separates this from other "blockchain MRV" projects:
 
 ---
 
-## 🔥 Problem Statement
+##  Problem Statement
 
 Small-scale renewable energy projects (1-15 MW hydropower) face critical barriers:
 
@@ -174,7 +174,7 @@ Small-scale renewable energy projects (1-15 MW hydropower) face critical barrier
 
 ---
 
-## 💡 Solution
+##  Solution
 
 **Hedera Hydropower MRV** automates the entire MRV workflow using:
 
@@ -185,14 +185,14 @@ Small-scale renewable energy projects (1-15 MW hydropower) face critical barrier
 - **ACM0002 Compliance**: UN CDM approved methodology for small-scale hydro
 
 ### Key Benefits
-- ⚡ **99% Cost Reduction**: $50K → $500 per verification
-- 🚀 **180x Faster**: 6 months → 1 day
-- 🎯 **95% Accuracy**: AI trust scores vs. 60-70% manual accuracy
-- 🔒 **Zero Double-Counting**: Hedera's public ledger
+-  **99% Cost Reduction**: $50K → $500 per verification
+-  **180x Faster**: 6 months → 1 day
+-  **95% Accuracy**: AI trust scores vs. 60-70% manual accuracy
+-  **Zero Double-Counting**: Hedera's public ledger
 
 ---
 
-## 🏭 Technical Architecture
+##  Technical Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -240,7 +240,7 @@ Small-scale renewable energy projects (1-15 MW hydropower) face critical barrier
 
 ---
 
-## 🌐 Hedera Integration
+##  Hedera Integration
 
 ### Services Used
 
@@ -267,7 +267,7 @@ Small-scale renewable energy projects (1-15 MW hydropower) face critical barrier
 
 ---
 
-## 🚀 Innovation
+##  Innovation
 
 ### 1. Multi-Layer AI Verification (Novel)
 
@@ -314,7 +314,7 @@ Where:
 
 ---
 
-## 📦 Installation
+##  Installation
 
 ### Prerequisites
 
@@ -393,7 +393,7 @@ console.log(result.transactionId);       // 0.0.6255927@...
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### Run All Tests
 
@@ -434,7 +434,7 @@ npm run test:coverage
 
 ---
 
-## 📚 Documentation
+##  Documentation
 
 ### Setup & Usage
 - **[QUICK_START.md](./QUICK_START.md)** - 5-minute setup guide
@@ -459,7 +459,7 @@ npm run test:coverage
 
 ---
 
-## 🏆 Hackathon Compliance
+##  Hackathon Compliance
 
 ### AngelHack Apex 2026 Requirements
 
@@ -492,7 +492,7 @@ npm run test:coverage
 
 ---
 
-## 🛣️ Roadmap
+##  Roadmap
 
 ### Phase 1: Mainnet Launch (Q2 2026)
 - Mainnet deployment on Hedera
@@ -511,19 +511,19 @@ npm run test:coverage
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 See [README-SETUP.md](./README-SETUP.md) for development setup and guidelines.
 
 ---
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](./LICENSE) file for details.
 
 ---
 
-## 👤 Author
+##  Author
 
 **Bikram Biswas**  
 GitHub: [@BikramBiswas786](https://github.com/BikramBiswas786)  
@@ -532,7 +532,7 @@ Hackathon: AngelHack Apex 2026 • Sustainability Track
 
 ---
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - **Hedera Team** for excellent SDK and documentation
 - **AngelHack/StackUp** for organizing Apex 2026
