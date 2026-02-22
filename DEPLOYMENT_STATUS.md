@@ -17,7 +17,7 @@
 
 ---
 
-## 🔗 Hedera Testnet Resources
+##  Hedera Testnet Resources
 
 ### Active Resources (Publicly Verifiable)
 
@@ -45,7 +45,7 @@ EF_GRID=0.8  # tCO2e per MWh (India grid emission factor)
 
 ---
 
-## 📋 Production Features
+##  Production Features
 
 ### ✅ Completed & Deployed
 
@@ -73,7 +73,7 @@ EF_GRID=0.8  # tCO2e per MWh (India grid emission factor)
 
 ---
 
-## 🛠️ Local Development Setup
+##  Local Development Setup
 
 ### Quick Start (< 5 minutes)
 
@@ -100,7 +100,7 @@ npm run api
 
 ---
 
-## 📊 Production Metrics (Live)
+##  Production Metrics (Live)
 
 ### API Performance
 
@@ -138,7 +138,7 @@ mrv_recs_minted_total{plant_id="*"}
 
 ---
 
-## 🚀 Demo Flow (Live on Vercel)
+##  Demo Flow (Live on Vercel)
 
 ### Access the Demo
 
@@ -177,7 +177,7 @@ curl https://hydropower-mrv-19feb26.vercel.app/api/demo
 
 ---
 
-## 💼 Business Metrics
+##  Business Metrics
 
 ### Cost Comparison
 
@@ -197,7 +197,7 @@ curl https://hydropower-mrv-19feb26.vercel.app/api/demo
 
 ---
 
-## 📖 Documentation Index
+##  Documentation Index
 
 ### Setup & Usage
 
@@ -275,7 +275,7 @@ curl https://hydropower-mrv-19feb26.vercel.app/api/demo
 
 ---
 
-## 👥 Team & Contact
+##  Team & Contact
 
 **Author:** Bikram Biswas  
 **GitHub:** [@BikramBiswas786](https://github.com/BikramBiswas786)  
@@ -284,7 +284,7 @@ curl https://hydropower-mrv-19feb26.vercel.app/api/demo
 
 ---
 
-## 🌱 Built for a Sustainable Future
+##  Built for a Sustainable Future
 
 **Status:** 🟢 **PRODUCTION-READY**  
 **Deployment:** ✅ **LIVE ON VERCEL**  
