@@ -1,6 +1,6 @@
 # Quick Start Guide - Hedera Hydropower MRV
 
-## 🚀 Production-Ready Setup (5 minutes)
+##  Production-Ready Setup (5 minutes)
 
 Your local environment is **pre-configured** to match the live Vercel deployment with real Hedera testnet credentials.
 
@@ -137,7 +137,7 @@ mrv_recs_minted_total{plant_id="PLANT-HP-001"} 0.738
 
 ---
 
-## 🔍 What Just Happened?
+##  What Just Happened?
 
 Your local API server is now running with **production Hedera credentials**:
 
@@ -155,7 +155,7 @@ Your local API server is now running with **production Hedera credentials**:
 
 ---
 
-## 🌐 Compare with Production
+##  Compare with Production
 
 Your local setup is **identical** to the live Vercel deployment:
 
@@ -171,7 +171,7 @@ Both use the **same Hedera testnet resources** — no mocking!
 
 ---
 
-## 🎮 Run the Full Demo
+##  Run the Full Demo
 
 ```powershell
 npm run demo
@@ -188,7 +188,7 @@ All operations are **permanently recorded** on Hedera HCS topic.
 
 ---
 
-## 📊 Next Steps
+##  Next Steps
 
 ### For Developers
 
@@ -235,7 +235,7 @@ All operations are **permanently recorded** on Hedera HCS topic.
 
 ---
 
-## ❓ Troubleshooting
+##  Troubleshooting
 
 ### Issue: `[EngineV1] Hedera credentials missing, running in mock mode`
 
@@ -279,7 +279,7 @@ npm run api
 
 ---
 
-## 🔗 Useful Links
+##  Useful Links
 
 - **Live Demo:** https://hydropower-mrv-19feb26.vercel.app
 - **GitHub Repo:** https://github.com/BikramBiswas786/https-github.com-BikramBiswas786-hedera-hydropower-mrv
@@ -289,4 +289,4 @@ npm run api
 
 ---
 
-**Built for AngelHack Apex 2026 🌱 Sustainability Track**
+**Built for AngelHack Apex 2026  Sustainability Track**
