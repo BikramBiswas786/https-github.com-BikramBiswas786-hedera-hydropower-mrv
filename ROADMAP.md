@@ -566,7 +566,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for:
 ## Questions?
 
 - **Technical:** Open a [GitHub Issue](https://github.com/BikramBiswas786/.../issues/new)
-- **Business/Pilot:** Email bikrambiswas007@gmail.com
+- **Business/Pilot:** Email biswasbikram786@gmail.com
 - **Urgent:** Slack #hedera-mrv (request invite)
 
 ---
