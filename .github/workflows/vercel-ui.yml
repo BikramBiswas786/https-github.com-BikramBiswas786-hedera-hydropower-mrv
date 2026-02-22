@@ -21,17 +21,10 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 18.x
-        cache: 'npm'
-        cache-dependency-path: './vercel-ui/package-lock.json'
 
     - name: Install dependencies
       working-directory: ./vercel-ui
-      run: |
-        if [ -f "package-lock.json" ]; then
-          npm ci
-        else
-          npm install
-        fi
+      run: npm install
 
     - name: Type check
       working-directory: ./vercel-ui
