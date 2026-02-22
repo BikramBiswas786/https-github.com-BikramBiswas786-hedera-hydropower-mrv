@@ -1,116 +1,96 @@
-﻿# Documentation Index
+﻿# Documentation
 
-Comprehensive guide to all documentation in the Hedera Hydropower MRV project.
+All the docs you need to understand, deploy, and run this project.
 
-## Quick Start
+## Start Here
 
-- [README.md](../README.md) - Project overview and quick start
-- [QUICK_START.md](../QUICK_START.md) - Fast setup guide
-- [API_QUICKSTART.md](API_QUICKSTART.md) - API quick reference
+- [Main README](../README.md) - What is this project?
+- [Quick Start](../QUICK_START.md) - Get running in 5 minutes
+- [API Quick Start](API_QUICKSTART.md) - Try the API
 
-## Core Documentation
+## How It Works
 
-### System Architecture
-- [ARCHITECTURE.md](ARCHITECTURE.md) - System design and component overview
-- [MRV-METHODOLOGY.md](MRV-METHODOLOGY.md) - MRV methodology overview
-- [ENGINE-V1.md](ENGINE-V1.md) - AI Trust Scoring Engine V1
-- [ENGINE-V2-TWO-TIER-MODES.md](ENGINE-V2-TWO-TIER-MODES.md) - Two-tier anchoring modes
+**Architecture**
+- [ARCHITECTURE.md](ARCHITECTURE.md) - System overview
+- [MRV-METHODOLOGY.md](MRV-METHODOLOGY.md) - MRV basics
+- [ENGINE-V1.md](ENGINE-V1.md) - Trust scoring
+- [ENGINE-V2-TWO-TIER-MODES.md](ENGINE-V2-TWO-TIER-MODES.md) - Anchoring modes
 
-### API Documentation
-- [API.md](API.md) - REST API reference
-- [api/openapi.yaml](api/openapi.yaml) - OpenAPI specification
-- [API_QUICKSTART.md](API_QUICKSTART.md) - API quick start guide
+**API**
+- [API.md](API.md) - REST endpoints
+- [api/openapi.yaml](api/openapi.yaml) - OpenAPI spec
 
-### Verra & Carbon Credits
-- [VERRA-GUIDEBOOK.md](VERRA-GUIDEBOOK.md) - Verra submission guide
-- [ACM0002-ALIGNMENT-MATRIX.md](ACM0002-ALIGNMENT-MATRIX.md) - Methodology compliance matrix
-- [CARBON-CREDITS-QUICK-START.md](../CARBON-CREDITS-QUICK-START.md) - Carbon credits overview
+**Verra & Carbon Credits**
+- [VERRA-GUIDEBOOK.md](VERRA-GUIDEBOOK.md) - Submit to Verra
+- [ACM0002-ALIGNMENT-MATRIX.md](ACM0002-ALIGNMENT-MATRIX.md) - Methodology mapping
+- [../CARBON-CREDITS-QUICK-START.md](../CARBON-CREDITS-QUICK-START.md) - Carbon credits 101
 
-## Operations
+## Running It
 
-### Deployment & Production
-- [deployment/DEPLOYMENT-GUIDE.md](deployment/DEPLOYMENT-GUIDE.md) - Production deployment procedures
-- [deployment/PRODUCTION-CHECKLIST.md](deployment/PRODUCTION-CHECKLIST.md) - Pre-deployment checklist
-- [VERCEL-DEPLOYMENT-GUIDE.md](VERCEL-DEPLOYMENT-GUIDE.md) - Vercel-specific deployment
-- [MAINNET-CHECKLIST.md](MAINNET-CHECKLIST.md) - Mainnet verification checklist
+**Deployment**
+- [deployment/DEPLOYMENT-GUIDE.md](deployment/DEPLOYMENT-GUIDE.md) - Deploy to prod
+- [deployment/PRODUCTION-CHECKLIST.md](deployment/PRODUCTION-CHECKLIST.md) - Pre-deploy checks
+- [VERCEL-DEPLOYMENT-GUIDE.md](VERCEL-DEPLOYMENT-GUIDE.md) - Vercel setup
+- [MAINNET-CHECKLIST.md](MAINNET-CHECKLIST.md) - Mainnet readiness
 
-### Monitoring & Operations
-- [MONITORING-PLAN.md](MONITORING-PLAN.md) - Data collection and monitoring procedures
-- [OPERATOR_GUIDE.md](OPERATOR_GUIDE.md) - Day-to-day operator procedures
-- [REC-GENERATION-WORKFLOW-EXECUTION.md](REC-GENERATION-WORKFLOW-EXECUTION.md) - REC generation workflow
-- [REC-GENERATION-WORKFLOW-TESTNET.md](REC-GENERATION-WORKFLOW-TESTNET.md) - Testnet REC workflow
+**Operations**
+- [MONITORING-PLAN.md](MONITORING-PLAN.md) - Set up monitoring
+- [OPERATOR_GUIDE.md](OPERATOR_GUIDE.md) - Daily operations
+- [REC-GENERATION-WORKFLOW-EXECUTION.md](REC-GENERATION-WORKFLOW-EXECUTION.md) - Generate RECs
+- [REC-GENERATION-WORKFLOW-TESTNET.md](REC-GENERATION-WORKFLOW-TESTNET.md) - Test RECs
 
 ## Development
 
-### Testing & Quality
-- [TESTING_GUIDE.md](../TESTING_GUIDE.md) - Testing procedures and guidelines
-- [VALIDATION.md](../VALIDATION.md) - Validation procedures
-- [VERIFICATION_GUIDE.md](../VERIFICATION_GUIDE.md) - Verification guide
-- [SCENARIO1-SPEC.md](SCENARIO1-SPEC.md) - Test scenario specification
+**Testing**
+- [../TESTING_GUIDE.md](../TESTING_GUIDE.md) - Run tests
+- [../VALIDATION.md](../VALIDATION.md) - Validation
+- [../VERIFICATION_GUIDE.md](../VERIFICATION_GUIDE.md) - Verification
+- [SCENARIO1-SPEC.md](SCENARIO1-SPEC.md) - Test scenarios
 
-### Integration
-- [INTEGRATION_GUIDE.md](../INTEGRATION_GUIDE.md) - System integration guide
-- [EDGE_GATEWAY_INTEGRATION.md](EDGE_GATEWAY_INTEGRATION.md) - Edge gateway integration
-- [multi-tenant-guide.md](multi-tenant-guide.md) - Multi-tenancy setup
+**Integration**
+- [../INTEGRATION_GUIDE.md](../INTEGRATION_GUIDE.md) - Integrate the system
+- [EDGE_GATEWAY_INTEGRATION.md](EDGE_GATEWAY_INTEGRATION.md) - Edge gateway
+- [multi-tenant-guide.md](multi-tenant-guide.md) - Multi-tenancy
 
-### Security
-- [SECURITY.md](SECURITY.md) - Security considerations
-- [SECURITY-AUDIT-CHECKLIST.md](SECURITY-AUDIT-CHECKLIST.md) - Security audit checklist
+**Security**
+- [SECURITY.md](SECURITY.md) - Security notes
+- [SECURITY-AUDIT-CHECKLIST.md](SECURITY-AUDIT-CHECKLIST.md) - Security checklist
 
-## Planning & Analysis
+## Planning
 
-### Roadmap & Strategy
-- [ROADMAP.md](../ROADMAP.md) - Project roadmap
+**Strategy**
+- [../ROADMAP.md](../ROADMAP.md) - Roadmap
 - [IMPLEMENTATION-PLAN-COMPREHENSIVE.md](IMPLEMENTATION-PLAN-COMPREHENSIVE.md) - Implementation plan
-- [PILOT_PLAN_6MW_PLANT.md](PILOT_PLAN_6MW_PLANT.md) - 6MW pilot deployment plan
+- [PILOT_PLAN_6MW_PLANT.md](PILOT_PLAN_6MW_PLANT.md) - Pilot plan
 
-### Analysis & Research
-- [COST-ANALYSIS.md](COST-ANALYSIS.md) - Cost breakdown and analysis
-- [COMPETITIVE-ANALYSIS.md](COMPETITIVE-ANALYSIS.md) - Market competitive analysis
-- [INVESTMENT_SUMMARY.md](../INVESTMENT_SUMMARY.md) - Investment overview
-- [IMPACT.md](../IMPACT.md) - Environmental impact statement
-- [methodology_analysis.md](methodology_analysis.md) - Methodology analysis
+**Analysis**
+- [COST-ANALYSIS.md](COST-ANALYSIS.md) - Costs
+- [COMPETITIVE-ANALYSIS.md](COMPETITIVE-ANALYSIS.md) - Competition
+- [../INVESTMENT_SUMMARY.md](../INVESTMENT_SUMMARY.md) - Investment
+- [../IMPACT.md](../IMPACT.md) - Impact
+- [methodology_analysis.md](methodology_analysis.md) - Notes
 
-## Technical Specifications
+## Technical Details
 
-### Anchoring & Sampling
-- [ANCHORING-MODES.md](ANCHORING-MODES.md) - Blockchain anchoring modes
-- [SMART-SAMPLING-STRATEGY.md](SMART-SAMPLING-STRATEGY.md) - Data sampling strategy
+- [ANCHORING-MODES.md](ANCHORING-MODES.md) - Blockchain anchoring
+- [SMART-SAMPLING-STRATEGY.md](SMART-SAMPLING-STRATEGY.md) - Sampling
+- [project-profile.schema.json](project-profile.schema.json) - Project schema
+- [multi-tenant-schema.sql](multi-tenant-schema.sql) - Database schema
 
-### Schemas & Data Models
-- [project-profile.schema.json](project-profile.schema.json) - Project profile JSON schema
-- [multi-tenant-schema.sql](multi-tenant-schema.sql) - Multi-tenant database schema
+## Other Stuff
 
-## Project Info
+- [FEATURES.md](../FEATURES.md) - Features
+- [DEMO_GUIDE.md](../DEMO_GUIDE.md) - Demo
+- [CHANGELOG.md](../CHANGELOG.md) - Changelog
+- [CONTRIBUTING.md](../CONTRIBUTING.md) - Contributing
+- [archived/](archived/) - Old docs
+- [MERGE-NOTES.md](MERGE-NOTES.md) - Cleanup notes
 
-### General
-- [FEATURES.md](../FEATURES.md) - Feature list
-- [DEMO_GUIDE.md](../DEMO_GUIDE.md) - Demo walkthrough
-- [CHANGELOG.md](../CHANGELOG.md) - Version history
-- [CONTRIBUTING.md](../CONTRIBUTING.md) - Contribution guidelines
+## Evidence & ML
 
-### Consolidation Notes
-- [MERGE-NOTES.md](MERGE-NOTES.md) - Documentation consolidation notes
-- [DOC-CONSOLIDATION-PLAN.md](DOC-CONSOLIDATION-PLAN.md) - Consolidation plan
-- [archived/](archived/) - Archived/deprecated documentation
-
-## Evidence & Data
-
-See [../evidence/](../evidence/) directory for:
-- Transaction records
-- Test outputs
-- Hashscan links
-- Evidence data files
-
-## Machine Learning
-
-See [../ml/](../ml/) directory for:
-- ML module documentation
-- AI integration guides
-- Model specifications
+- [../evidence/](../evidence/) - Transactions, test outputs
+- [../ml/](../ml/) - ML docs
 
 ---
 
-**Last Updated**: February 22, 2026  
-**Total Active Docs**: ~40 files  
-**Archived Docs**: ~35 files in docs/archived/
+Last updated: Feb 22, 2026 | Active: ~40 files | Archived: ~35 files

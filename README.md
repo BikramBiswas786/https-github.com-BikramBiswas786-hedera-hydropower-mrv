@@ -562,3 +562,21 @@ All documentation has been organized into a clean, professional structure:
 - [Testing Guide](TESTING_GUIDE.md) | [Security](docs/SECURITY.md)
 
 *Documentation consolidation completed February 22, 2026 - reduced from 93 to 40 core files*
+
+---
+
+## Documentation
+
+Everything's in the docs/ folder.
+
+**Quick links:**
+- [All Docs](docs/README.md) - Complete list
+- [Architecture](docs/ARCHITECTURE.md) - How it works
+- [API](docs/API.md) - REST API
+- [Verra Guide](docs/VERRA-GUIDEBOOK.md) - Submit to Verra
+- [Deploy](docs/deployment/DEPLOYMENT-GUIDE.md) - Go to production
+- [Operations](docs/OPERATOR_GUIDE.md) - Run the system
+- [Testing](TESTING_GUIDE.md) - Run tests
+- [Security](docs/SECURITY.md) - Security
+
+*We cleaned up 35+ duplicate files in Feb 2026. Old stuff is in docs/archived/ if you need it.*
