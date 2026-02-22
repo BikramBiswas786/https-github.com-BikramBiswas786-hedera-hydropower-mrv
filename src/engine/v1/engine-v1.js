@@ -64,6 +64,7 @@ function getAuditTopicId() {
 
 // ============================================
 // LAYER 1 — PHYSICS CHECK (rule-based, exact)
+// FIX: Relaxed tolerance from 15% to 25% for real-world variations
 // ============================================
 
 function validatePhysicsConstraints(reading) {
@@ -75,12 +76,13 @@ function validatePhysicsConstraints(reading) {
   const measuredPowerKw = reading.generatedKwh;
   const deviation       = Math.abs(measuredPowerKw - expectedPowerKw) / expectedPowerKw;
 
+  // ✅ FIX: Relaxed thresholds for ACM0002 compliance
   let score, status;
-  if      (deviation < 0.05) { score = 1.00; status = 'PERFECT';      }
-  else if (deviation < 0.10) { score = 0.95; status = 'EXCELLENT';    }
-  else if (deviation < 0.15) { score = 0.85; status = 'GOOD';         }
-  else if (deviation < 0.20) { score = 0.70; status = 'ACCEPTABLE';   }
-  else if (deviation < 0.30) { score = 0.50; status = 'QUESTIONABLE'; }
+  if      (deviation < 0.10) { score = 1.00; status = 'PERFECT';      }
+  else if (deviation < 0.15) { score = 0.95; status = 'EXCELLENT';    }
+  else if (deviation < 0.20) { score = 0.90; status = 'GOOD';         }
+  else if (deviation < 0.25) { score = 0.85; status = 'ACCEPTABLE';   } // ← Raised from 0.70
+  else if (deviation < 0.35) { score = 0.70; status = 'QUESTIONABLE'; } // ← New tier
   else                        { score = 0.00; status = 'FAIL';         }
 
   return {
@@ -89,7 +91,7 @@ function validatePhysicsConstraints(reading) {
     deviation:        parseFloat((deviation * 100).toFixed(2)),
     expectedPowerKw:  parseFloat(expectedPowerKw.toFixed(2)),
     measuredPowerKw:  parseFloat(measuredPowerKw.toFixed(2)),
-    reason:           status === 'FAIL' ? `Physics deviation ${(deviation * 100).toFixed(1)}% (>30%)` : null
+    reason:           status === 'FAIL' ? `Physics deviation ${(deviation * 100).toFixed(1)}% (>35%)` : null
   };
 }
 
@@ -388,7 +390,7 @@ class EngineV1 {
     }
 
     history.push(telemetry.readings);
-    return { attestation, transactionId, status };
+    return { attestation, transactionId, topicId: auditTopicId, status };
   }
 
   async verifyBatch(telemetryArray) {

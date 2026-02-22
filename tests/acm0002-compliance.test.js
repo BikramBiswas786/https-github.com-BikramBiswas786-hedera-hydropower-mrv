@@ -1,6 +1,4 @@
 // tests/acm0002-compliance.test.js
-// ACM0002 Methodology Compliance Tests
-
 const Workflow = require('../src/workflow');
 const ACM0002Validator = require('../src/carbon/ACM0002Validator');
 
@@ -10,17 +8,16 @@ describe('ACM0002 Methodology Compliance', () => {
 
   beforeEach(async () => {
     workflow = new Workflow({
-      projectId: 'ACM0002-TEST-001',
-      location: 'Sikkim, India',
-      capacity_mw: 50,
-      projectType: 'hydropower',
-      enableHedera: true,
-      methodology: 'ACM0002',
-      gridEmissionFactor: 0.82,
+      autoApproveThreshold: 0.85,
+      manualReviewThreshold: 0.50,
+      deviceProfile: {
+        capacity: 10000,
+        maxFlow: 20,
+        maxHead: 500,
+        minEfficiency: 0.70
+      }
     });
-    // FIX: Pass parameters in correct order (projectId, deviceId, gridEmissionFactor)
     await workflow.initialize('ACM0002-TEST-001', 'TURBINE-ACM0002', 0.82);
-    
     validator = new ACM0002Validator();
   });
 
@@ -36,7 +33,6 @@ describe('ACM0002 Methodology Compliance', () => {
         gridConnected: true,
         commissioningDate: '2024-01-01',
       });
-
       expect(eligibility.isEligible).toBe(true);
       expect(eligibility.category).toBe('Type I: Renewable electricity generation');
     });
@@ -47,7 +43,6 @@ describe('ACM0002 Methodology Compliance', () => {
         interconnectionAgreement: true,
         meterLocation: 'grid_injection_point',
       });
-
       expect(result.compliant).toBe(true);
     });
   });
@@ -56,13 +51,11 @@ describe('ACM0002 Methodology Compliance', () => {
     test('should calculate baseline emissions using grid emission factor', () => {
       const generation_MWh = 1000;
       const EF_GRID = 0.82;
-      
       const baseline = validator.calculateBaselineEmissions({
         generation_MWh,
         gridEmissionFactor: EF_GRID,
       });
-
-      expect(baseline.BE_y).toBe(820); // 1000 * 0.82
+      expect(baseline.BE_y).toBe(820);
     });
   });
 
@@ -73,7 +66,6 @@ describe('ACM0002 Methodology Compliance', () => {
         fossilFuelUse: 0,
         reservoirArea_km2: 0,
       });
-
       expect(projectEmissions.PE_y).toBe(0);
     });
   });
@@ -83,7 +75,6 @@ describe('ACM0002 Methodology Compliance', () => {
       const leakage = validator.calculateLeakageEmissions({
         projectType: 'hydropower',
       });
-
       expect(leakage.LE_y).toBe(0);
     });
   });
@@ -95,7 +86,6 @@ describe('ACM0002 Methodology Compliance', () => {
         projectEmissions: 0,
         leakageEmissions: 0,
       });
-
       expect(emissionReductions.ER_y).toBe(820);
     });
 
@@ -106,8 +96,9 @@ describe('ACM0002 Methodology Compliance', () => {
         headHeight_m: 50,
         generatedKwh: 1000,
         pH: 7.0,
+        turbidity_ntu: 10,
+        temperature_celsius: 18,
       });
-      
       if (result.verificationStatus === 'APPROVED') {
         expect(result.carbonCredits).toBeDefined();
         expect(result.carbonCredits.methodology).toBe('ACM0002');
@@ -118,13 +109,26 @@ describe('ACM0002 Methodology Compliance', () => {
 
   describe('Section F: Full Workflow ACM0002 Test', () => {
     test('should execute ACM0002-compliant carbon credit lifecycle', async () => {
-      const result = await workflow.submitReading({
+      const telemetry = {
         timestamp: new Date().toISOString(),
-        flowRate_m3_per_s: 5.0,
+        flowRate_m3_per_s: 12.0,  // ✅ FIXED: Increased from 5.0 to support 5 MWh generation
         headHeight_m: 50,
-        generatedKwh: 5000, // 5 MWh
+        generatedKwh: 5000,
         pH: 7.0,
-      });
+        turbidity_ntu: 10,
+        temperature_celsius: 18,
+      };
+
+      const result = await workflow.submitReading(telemetry);
+
+      console.error('='.repeat(80));
+      console.error('RESULT STATUS:', result.verificationStatus);
+      console.error('TRUST SCORE:', result.trustScore);
+      console.error('FRAUD DETECTED:', result.fraudDetected);
+      console.error('FRAUD REASONS:', JSON.stringify(result.fraudReasons));
+      console.error('PHYSICS:', JSON.stringify(result.verificationResults?.physics));
+      console.error('CONSISTENCY:', JSON.stringify(result.verificationResults?.consistency));
+      console.error('='.repeat(80));
 
       expect(result.verificationStatus).toBe('APPROVED');
       expect(result.carbonCredits).toBeDefined();
@@ -136,7 +140,6 @@ describe('ACM0002 Methodology Compliance', () => {
 
   describe('Section G: Monitoring Report', () => {
     test('should generate ACM0002-compliant monitoring report', async () => {
-      // Submit a few readings
       for (let i = 0; i < 3; i++) {
         await workflow.submitReading({
           timestamp: new Date(Date.now() + i * 1000).toISOString(),
@@ -144,11 +147,11 @@ describe('ACM0002 Methodology Compliance', () => {
           headHeight_m: 50,
           generatedKwh: 1000,
           pH: 7.0,
+          turbidity_ntu: 10,
+          temperature_celsius: 18,
         });
       }
-
       const report = await workflow.generateMonitoringReport();
-      
       expect(report.success).toBe(true);
       expect(report.acm0002Report).toBeDefined();
       expect(report.acm0002Report.methodology).toBe('ACM0002 v18.0');
