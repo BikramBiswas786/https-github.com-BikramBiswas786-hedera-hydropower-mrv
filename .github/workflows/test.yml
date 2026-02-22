@@ -7,12 +7,17 @@ on:
       - 'vercel-ui/**'
       - '*.md'
       - 'docs/**'
+      - 'DEPLOYMENT.md'
+      - 'vercel.json'
   pull_request:
     branches: [ main ]
     paths-ignore:
       - 'vercel-ui/**'
       - '*.md'
       - 'docs/**'
+      - 'DEPLOYMENT.md'
+      - 'vercel.json'
+  workflow_dispatch:
 
 jobs:
   test:
@@ -40,3 +45,11 @@ jobs:
       run: npm test -- --forceExit --testTimeout=30000
       env:
         NODE_ENV: test
+
+    - name: Test Summary
+      if: always()
+      run: |
+        echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Status:** Tests completed" >> $GITHUB_STEP_SUMMARY
+        echo "**Node Version:** ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
