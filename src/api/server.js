@@ -4,7 +4,7 @@
  * Hedera Hydropower MRV REST API Server
  * Production-ready HTTP endpoints with ALL features integrated
  *
- * Version: 1.6.2 - JWT/RBAC AUTH WIRED
+ * Version: 1.6.3 - DOCKER HEALTH FLAG
  * Completion: 94% core + Carbon Credits (Stream 1: 90%)
  * Features: MRV, ML, Forecasting, Clustering, Active Learning,
  *           Multi-Plant, Renewable Adapter, Multi-Tenant, Carbon Credits
@@ -69,7 +69,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: Date.now(),
-    uptime: process.uptime(),
+    uptime: process.uptime(),       docker: process.env.DOCKER_HEALTHY === '1',
     version: '1.6.2',
     completion: '94%',
     features: {
