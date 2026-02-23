@@ -2,7 +2,7 @@
 
 /**
  * Plants Router  v1
- * ───────────────────────────────────────────────────────
+ * ─────────────────────────────────────────────────────
  * Replaces the inline `let plants = []` block that was in server.js.
  * Now backed by PostgreSQL (with transparent in-memory fallback).
  *
@@ -18,12 +18,12 @@
 
 const express = require('express');
 const auth    = require('../../middleware/auth');
-const { plantRepo }                              = require('../../db/plants');
-const { plantCreateRules, handleValidation }     = require('../../../src/middleware/validate');
+const { plantRepo }                          = require('../../db/plants');
+const { plantCreateRules, handleValidation } = require('../../middleware/validate');
 
 const router = express.Router();
 
-// ─── POST /api/v1/plants ─────────────────────────────────────────────────────────
+// ─── POST /api/v1/plants ─────────────────────────────────────────────────────────────────
 router.post(
   '/',
   auth.jwt,
@@ -66,7 +66,7 @@ router.post(
   }
 );
 
-// ─── GET /api/v1/plants/aggregate/stats  (must be before /:id) ────────────────
+// ─── GET /api/v1/plants/aggregate/stats  (must be before /:id) ──────────────────
 router.get('/aggregate/stats', auth.jwt, async (req, res) => {
   try {
     const stats = await plantRepo.aggregate();
@@ -77,7 +77,7 @@ router.get('/aggregate/stats', auth.jwt, async (req, res) => {
   }
 });
 
-// ─── GET /api/v1/plants ────────────────────────────────────────────────────────────
+// ─── GET /api/v1/plants ───────────────────────────────────────────────────────────────────
 router.get('/', auth.optionalJWT, async (req, res) => {
   try {
     const { status, type } = req.query;
@@ -96,7 +96,7 @@ router.get('/', auth.optionalJWT, async (req, res) => {
   }
 });
 
-// ─── GET /api/v1/plants/:id ───────────────────────────────────────────────────────
+// ─── GET /api/v1/plants/:id ──────────────────────────────────────────────────────────────
 router.get('/:id', auth.optionalJWT, async (req, res) => {
   try {
     const plant = await plantRepo.findById(req.params.id);
