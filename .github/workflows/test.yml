@@ -31,8 +31,8 @@ jobs:
       run: npm install
 
     - name: Audit for vulnerabilities
-      run: npm audit --audit-level=high
-      continue-on-error: true
+      run: npm audit --audit-level=moderate
+      continue-on-error: false
 
     - name: Check for hardcoded secrets in source
       run: |
@@ -57,7 +57,7 @@ jobs:
         echo "## 🔒 Security Audit" >> $GITHUB_STEP_SUMMARY
         echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
         echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-        echo "| npm audit (high) | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+        echo "| npm audit (moderate) | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
         echo "| Hardcoded secrets scan | ✅ Clean |" >> $GITHUB_STEP_SUMMARY
 
   # ────────────────────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ jobs:
 
     - name: Train ML model
       run: npm run ml:train || echo "⚠️ ML training skipped"
-      continue-on-error: true
+      continue-on-error: false
 
     - name: Run all tests
       run: npm test -- --forceExit --testTimeout=60000 --maxWorkers=2
