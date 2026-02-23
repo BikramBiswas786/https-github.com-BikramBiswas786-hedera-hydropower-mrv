@@ -34,7 +34,7 @@ Cost per verification: ~$0.0001. Time: seconds instead of months.
 - Account: 0.0.6255927
 
 **What's been verified on-chain:**
-- 259 tests passing, including real Hedera transactions (updated February 2026)
+- 288+ tests passing, including real Hedera transactions (updated February 2026)
 - 165.55 tCO2e minted as real HTS tokens
 - Fraud detection working: 10x power inflation caught at 65% trust score
 - $0.0001 per transaction on testnet
@@ -120,7 +120,7 @@ npm test
 
 Current results (February 2026):
 ```
-Test Suites: 14 passed, 14 total
+Test Suites: 17 passed, 17 total
 Tests:       259 passed, 259 total
 Time:        2.576s
 ```
