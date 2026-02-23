@@ -1,0 +1,14 @@
+{
+  "name": "hedera-hydropower-mrv",
+  "version": "1.3.0",
+  "description": "Hedera-based MRV system for run-of-river Hydropower — Apex Hackathon 2026",
+  "main": "src/engine/v1/engine-v1.js",
+  "scripts": {
+    "test": "jest",
+    "test:ml": "jest tests/ml --verbose",
+    "demo": "node scripts/demo.js",
+    "start": "node scripts/demo.js",
+    "api": "node src/api/server.js"
+  },
+  "_note": "This is a backup of package.json from a previous state. The active package.json is at the root."
+}
