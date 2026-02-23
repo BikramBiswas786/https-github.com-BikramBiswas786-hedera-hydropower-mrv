@@ -6,6 +6,38 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+---
+
+## [1.3.0] — 2026-02-23
+
+### Added
+- `src/hedera/retry.js` — executeWithRetry helper: fresh TX per attempt, eliminates TRANSACTION_EXPIRED on retry
+- `src/db/plants.js` — PlantRepository backed by PostgreSQL with in-memory fallback
+- `src/middleware/validate.js` — plantCreateRules via express-validator (capacity_mw min 0, max 10000)
+- `src/middleware/auth.js` wired into server.js — JWT/RBAC on all write endpoints; API-Key for IoT telemetry
+- POST /api/auth/login and GET /api/auth/demo-token endpoints
+- Docker validation CI job: docker compose config + docker build + container smoke test
+- scripts/test-onchain.js — on-chain sanity script moved from root
+- tests/hedera-retry.test.js — 4 tests: fresh TX per retry, fail-fast on non-expiry errors
+- test/ml/accuracy-benchmark.test.js — ML accuracy benchmark asserting >= 85% on 500 labeled samples
+- docs/deleted/ and docs/archived/ — 18 redundant files consolidated out of root
+
+### Fixed
+- TRANSACTION_EXPIRED: mintRECs and topic submit now call buildTxFn() fresh each retry attempt
+- CI: Node 18 removed from matrix (React Native / Metro require >= 20.19.4)
+- CI: accuracy-benchmark.test.js rewritten from Mocha/Chai to Jest
+- CI: Hedera SDK mock missing setMaxTransactionFee, setTransactionValidDuration, setRegenerateTransactionId
+- CI: undefined === undefined caused all errors to be retried in mock env
+- plants.js require path: ../../../src/middleware/validate corrected to ../../middleware/validate
+- .env.backup, .env.old, .env.production removed from git tracking
+
+### Improved
+- /api/features docker_deployment.tested set to true (CI proves it)
+- /api/features ml_fraud_detection.accuracy corrected to 87%+ (measured, was unverifiable 98.3%)
+- README test count updated to 288+ and accuracy claim aligned with benchmark
+- plants[] in-memory array fully replaced by PlantRepository
+- Rate limiting, HTTPS (Vercel), and input validation all production-wired
+
 ### Added
 - `src/storage/InMemoryAttestationStore.js` — pluggable persistence layer with PostgreSQL-compatible interface
 - `src/api/server.js` — minimal REST API (health, telemetry, attestations endpoints)
