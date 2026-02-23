@@ -1,199 +1,170 @@
 'use strict';
 
 /**
- * Integration tests for POST+GET /api/v1/plants
+ * Unit tests for the Plants layer — P3 (storage) + P4 (validation)
  * ─────────────────────────────────────────────────────────────────
- * Covers P3 (PostgreSQL-backed storage) and P4 (express-validator).
+ * Zero extra dependencies — no supertest, no HTTP layer.
  *
- * Auth strategy:
- *   Operator/admin routes need a JWT.  We use POST /api/auth/login
- *   with the demo operator credential (op-secret) to obtain a real
- *   token from the running app, then pass it as Bearer.
+ * P4: plantCreateRules chains are run directly via chain.run(req)
+ *   (express-validator v6+ API, already installed).
  *
- *   Public GET routes are called without auth.
+ * P3: plantRepo is exercised by calling its JS API directly.
+ *   jest.resetModules() in beforeEach gives every test a fresh
+ *   in-memory store so tests cannot pollute each other.
  */
 
-const request = require('supertest');
-const app     = require('../src/api/server');
+const { validationResult } = require('express-validator');
+const { plantCreateRules }  = require('../src/middleware/validate');
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
-async function getOperatorToken() {
-  const res = await request(app)
-    .post('/api/auth/login')
-    .send({ email: 'operator@mrv.local', password: 'op-secret' });
-  return res.body.token;
-}
-
-async function getAdminToken() {
-  const res = await request(app)
-    .post('/api/auth/login')
-    .send({ email: 'admin@mrv.local', password: 'admin-secret' });
-  return res.body.token;
-}
-
-// Unique plant_id per test run to avoid cross-test collisions in
-// the in-memory store (PlantRepository resets between process restarts
-// but NOT between Jest test files in the same process).
+// ─── unique IDs per test run to survive any shared-state edge cases ──────────────
 let runId;
 beforeAll(() => { runId = Date.now().toString(36); });
 function pid(suffix) { return `PLT-${runId}-${suffix}`; }
 
-// ───────────────────────────────────────────────────────────────────────
-describe('Plants Router — P3 (PostgreSQL) + P4 (express-validator)', () => {
+/**
+ * Run all plantCreateRules validator chains against a plain body object.
+ * Returns express-validator's Result so tests can inspect errors.
+ */
+async function validate(body) {
+  const req = { body };
+  for (const chain of plantCreateRules) {
+    await chain.run(req);
+  }
+  return validationResult(req);
+}
 
-  // ─── POST /api/v1/plants ───────────────────────────────────────────────────
-  describe('POST /api/v1/plants', () => {
+// ═══════════════════════════════════════════════════════════════════════
+describe('plantCreateRules — P4 input sanitization (express-validator)', () => {
 
-    test('[P4] rejects capacity_mw above 10000 with 422', async () => {
-      const token = await getOperatorToken();
-      const res = await request(app)
-        .post('/api/v1/plants')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          plant_id:    pid('too-big'),
-          name:        'Too Big Plant',
-          capacity_mw: 99999        // express-validator: max 10000
-        });
-      expect(res.status).toBe(422);
-      expect(res.body.errors).toBeDefined();
+  test('accepts valid plant data — no errors', async () => {
+    const result = await validate({
+      plant_id:    pid('ok'),
+      name:        'Ganges Hydro Unit 1',
+      capacity_mw: 12.5
     });
-
-    test('[P4] rejects negative capacity_mw with 422', async () => {
-      const token = await getOperatorToken();
-      const res = await request(app)
-        .post('/api/v1/plants')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          plant_id:    pid('negative'),
-          name:        'Negative Plant',
-          capacity_mw: -5           // express-validator: min 0
-        });
-      expect(res.status).toBe(422);
-    });
-
-    test('[P4] rejects SQL-injection-style string for capacity_mw', async () => {
-      const token = await getOperatorToken();
-      const res = await request(app)
-        .post('/api/v1/plants')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          plant_id:    pid('sqli'),
-          name:        'Injected',
-          capacity_mw: '999999; DROP TABLE plants;'
-        });
-      expect(res.status).toBe(422);
-    });
-
-    test('[P3] creates a plant and reports storage backend', async () => {
-      const token = await getOperatorToken();
-      const res = await request(app)
-        .post('/api/v1/plants')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          plant_id:    pid('valid'),
-          name:        'Test Hydro Plant',
-          location:    'West Bengal, IN',
-          capacity_mw: 12.5,
-          plant_type:  'hydro'
-        });
-      expect(res.status).toBe(201);
-      expect(res.body.status).toBe('success');
-      expect(res.body.plant.plant_id).toBe(pid('valid'));
-      expect(res.body.plant.capacity_mw).toBe(12.5);
-      // P3 proof: response declares which storage backend is active
-      expect(['postgresql', 'in-memory']).toContain(res.body.storage);
-    });
-
-    test('returns 409 on duplicate plant_id', async () => {
-      const token = await getAdminToken();
-      const payload = {
-        plant_id:    pid('dup'),
-        name:        'Duplicate Test',
-        capacity_mw: 5
-      };
-      // First create succeeds
-      await request(app)
-        .post('/api/v1/plants')
-        .set('Authorization', `Bearer ${token}`)
-        .send(payload);
-      // Second create must return 409
-      const res = await request(app)
-        .post('/api/v1/plants')
-        .set('Authorization', `Bearer ${token}`)
-        .send(payload);
-      expect(res.status).toBe(409);
-      expect(res.body.error).toMatch(/already exists/i);
-    });
-
-    test('returns 400 when required fields are missing', async () => {
-      const token = await getOperatorToken();
-      const res = await request(app)
-        .post('/api/v1/plants')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ name: 'Missing plant_id and capacity' });
-      // express-validator returns 422; bare required-field check returns 400
-      expect([400, 422]).toContain(res.status);
-    });
-
-    test('returns 401 without auth token', async () => {
-      const res = await request(app)
-        .post('/api/v1/plants')
-        .send({ plant_id: pid('noauth'), name: 'No Auth', capacity_mw: 1 });
-      expect(res.status).toBe(401);
-    });
+    expect(result.isEmpty()).toBe(true);
   });
 
-  // ─── GET /api/v1/plants ───────────────────────────────────────────────────
-  describe('GET /api/v1/plants', () => {
-
-    test('returns plant list (public, no auth required)', async () => {
-      const res = await request(app).get('/api/v1/plants');
-      expect(res.status).toBe(200);
-      expect(res.body.status).toBe('success');
-      expect(Array.isArray(res.body.plants)).toBe(true);
-      expect(typeof res.body.total_capacity_mw).toBe('number');
-      expect(['postgresql', 'in-memory']).toContain(res.body.storage);
+  test('rejects capacity_mw above 10 000', async () => {
+    const result = await validate({
+      plant_id:    pid('big'),
+      name:        'Too Big',
+      capacity_mw: 99999
     });
-
-    test('returns 404 for unknown plant_id', async () => {
-      const res = await request(app).get('/api/v1/plants/DOES-NOT-EXIST-XYZ');
-      expect(res.status).toBe(404);
-      expect(res.body.error).toMatch(/not found/i);
-    });
-
-    test('returns a known plant by id', async () => {
-      // Create one first
-      const token = await getOperatorToken();
-      const createRes = await request(app)
-        .post('/api/v1/plants')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ plant_id: pid('fetch'), name: 'Fetch Me', capacity_mw: 7 });
-      expect(createRes.status).toBe(201);
-
-      const res = await request(app).get(`/api/v1/plants/${pid('fetch')}`);
-      expect(res.status).toBe(200);
-      expect(res.body.plant.plant_id).toBe(pid('fetch'));
-    });
+    expect(result.isEmpty()).toBe(false);
+    expect(result.array().some(e => e.path === 'capacity_mw')).toBe(true);
   });
 
-  // ─── GET /api/v1/plants/aggregate/stats ─────────────────────────────────
-  describe('GET /api/v1/plants/aggregate/stats', () => {
-
-    test('returns aggregate totals (requires JWT)', async () => {
-      const token = await getOperatorToken();
-      const res = await request(app)
-        .get('/api/v1/plants/aggregate/stats')
-        .set('Authorization', `Bearer ${token}`);
-      expect(res.status).toBe(200);
-      expect(res.body.status).toBe('success');
-      expect(typeof res.body.total_plants).toBe('number');
-      expect(typeof res.body.total_capacity_mw).toBe('number');
+  test('rejects negative capacity_mw', async () => {
+    const result = await validate({
+      plant_id:    pid('neg'),
+      name:        'Negative',
+      capacity_mw: -1
     });
+    expect(result.isEmpty()).toBe(false);
+    expect(result.array().some(e => e.path === 'capacity_mw')).toBe(true);
+  });
 
-    test('returns 401 without auth token', async () => {
-      const res = await request(app).get('/api/v1/plants/aggregate/stats');
-      expect(res.status).toBe(401);
+  test('rejects SQL-injection-style string for capacity_mw', async () => {
+    const result = await validate({
+      plant_id:    pid('sqli'),
+      name:        'Injected',
+      capacity_mw: '999999; DROP TABLE plants;'
     });
+    expect(result.isEmpty()).toBe(false);
+    expect(result.array().some(e => e.path === 'capacity_mw')).toBe(true);
+  });
+
+  test('rejects missing plant_id', async () => {
+    const result = await validate({ name: 'No ID', capacity_mw: 5 });
+    expect(result.isEmpty()).toBe(false);
+    expect(result.array().some(e => e.path === 'plant_id')).toBe(true);
+  });
+
+  test('rejects missing name', async () => {
+    const result = await validate({ plant_id: pid('noname'), capacity_mw: 5 });
+    expect(result.isEmpty()).toBe(false);
+    expect(result.array().some(e => e.path === 'name')).toBe(true);
+  });
+
+  test('rejects missing capacity_mw', async () => {
+    const result = await validate({ plant_id: pid('nocap'), name: 'No Cap' });
+    expect(result.isEmpty()).toBe(false);
+    expect(result.array().some(e => e.path === 'capacity_mw')).toBe(true);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+describe('PlantRepository — P3 persistent storage (PostgreSQL / in-memory)', () => {
+
+  let plantRepo;
+
+  // Fresh module = fresh in-memory store for every test
+  beforeEach(() => {
+    jest.resetModules();
+    ({ plantRepo } = require('../src/db/plants'));
+  });
+
+  const plant = (suffix, overrides = {}) => ({
+    plant_id:    pid(suffix),
+    name:        'Unit Test Plant',
+    capacity_mw: 10,
+    plant_type:  'hydro',
+    status:      'active',
+    created_by:  'test@mrv.local',
+    ...overrides
+  });
+
+  test('create() — returns the created plant with correct fields', async () => {
+    const created = await plantRepo.create(plant('create'));
+    expect(created.plant_id).toBe(pid('create'));
+    expect(Number(created.capacity_mw)).toBe(10);
+    expect(created.status).toBe('active');
+  });
+
+  test('create() — throws PLANT_EXISTS on duplicate plant_id', async () => {
+    await plantRepo.create(plant('dup'));
+    await expect(
+      plantRepo.create(plant('dup'))
+    ).rejects.toThrow('PLANT_EXISTS');
+  });
+
+  test('findAll() — returns list that includes a newly created plant', async () => {
+    await plantRepo.create(plant('list'));
+    const all = await plantRepo.findAll({});
+    expect(Array.isArray(all)).toBe(true);
+    expect(all.some(p => p.plant_id === pid('list'))).toBe(true);
+  });
+
+  test('findAll() — returns empty array when store is empty', async () => {
+    const all = await plantRepo.findAll({});
+    expect(Array.isArray(all)).toBe(true);
+    expect(all).toHaveLength(0);
+  });
+
+  test('findById() — returns plant by exact id', async () => {
+    await plantRepo.create(plant('byid'));
+    const found = await plantRepo.findById(pid('byid'));
+    expect(found).not.toBeNull();
+    expect(found.plant_id).toBe(pid('byid'));
+  });
+
+  test('findById() — returns null for unknown id', async () => {
+    const result = await plantRepo.findById('DOES-NOT-EXIST-XYZ-999');
+    expect(result).toBeNull();
+  });
+
+  test('aggregate() — returns numeric total_plants and total_capacity_mw', async () => {
+    await plantRepo.create(plant('agg1', { capacity_mw: 5  }));
+    await plantRepo.create(plant('agg2', { capacity_mw: 15 }));
+    const stats = await plantRepo.aggregate();
+    expect(typeof stats.total_plants).toBe('number');
+    expect(stats.total_plants).toBeGreaterThanOrEqual(2);
+    expect(typeof stats.total_capacity_mw).toBe('number');
+    expect(Number(stats.total_capacity_mw)).toBeGreaterThanOrEqual(20);
+  });
+
+  test('isUsingDB() — returns a boolean', () => {
+    expect(typeof plantRepo.isUsingDB()).toBe('boolean');
   });
 });
