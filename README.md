@@ -34,7 +34,7 @@ Cost per verification: ~$0.0001. Time: seconds instead of months.
 - Account: 0.0.6255927
 
 **What's been verified on-chain:**
-- 237 tests passing, including real Hedera transactions
+- 259 tests passing, including real Hedera transactions (updated February 2026)
 - 165.55 tCO2e minted as real HTS tokens
 - Fraud detection working: 10x power inflation caught at 65% trust score
 - $0.0001 per transaction on testnet
@@ -84,7 +84,7 @@ Verification Engine
     |
     v
 Trust score (0-1.0)
-    APPROVED >0.90 | FLAGGED 0.50-0.90 | REJECTED <0.50
+    APPROVED >0.85 | FLAGGED 0.50-0.85 | REJECTED <0.50
     |
     v
 Hedera DLT
@@ -101,6 +101,7 @@ Hedera DLT
 |---------|-------------------|-----|
 | Hedera Consensus Service | Audit log for every verified reading | Topic: `0.0.7462776` |
 | Hedera Token Service | Carbon credit tokens (HREC) | Token: `0.0.7964264` |
+| Hedera DID | Decentralized identity per device | Topic: `0.0.8011563` |
 | Hedera Account | Transaction signing | `0.0.6255927` |
 
 **Why Hedera over other chains:**
@@ -117,11 +118,11 @@ Hedera DLT
 npm test
 ```
 
-Current results:
+Current results (February 2026):
 ```
-Test Suites: 12 passed, 12 total
-Tests:       237 passed, 237 total
-Time:        40.2s
+Test Suites: 14 passed, 14 total
+Tests:       259 passed, 259 total
+Time:        2.576s
 ```
 
 To run with real Hedera transactions:
@@ -161,19 +162,53 @@ console.log(result.transactionId);      // Hedera transaction ID
 
 ## Carbon credits
 
-The system implements ACM0002 (UN CDM methodology for small-scale hydro):
+The system implements ACM0002 v18.0 (UN CDM methodology for grid-connected renewable energy):
 
 ```
 ER = BE - PE - LE
 
-BE = baseline emissions (grid electricity displaced)
-PE = project emissions (construction, operations)
-LE = leakage emissions (indirect effects)
+BE = baseline emissions (grid electricity displaced × grid emission factor)
+PE = project emissions (0 for run-of-river hydropower)
+LE = leakage emissions (0 for grid-connected renewable)
 ```
 
 Example: 0.9 MWh x 0.8 tCO2e/MWh = 0.72 tCO2e
 
 Verified credits are issued as HREC tokens on Hedera Token Service. Current market rate is ~$15-18/tCO2e with a blockchain verification premium.
+
+### ACM0002 v18.0 Compliance Coverage
+
+| Section | Description | Status |
+|---------|-------------|--------|
+| Section 4 | Project eligibility | Implemented |
+| Section 6-7 | Baseline emissions calculation | Implemented |
+| Section 8 | Project emissions calculation | Implemented |
+| Section 9 | Leakage emissions calculation | Implemented |
+| Section 10 | Emission reductions calculation | Implemented |
+| Section 11 | Monitoring parameters | Implemented |
+| Section 12 | Quality assurance procedures | Implemented |
+
+---
+
+## Fraud Detection
+
+Physics-based validation rejects impossible readings before they reach the blockchain:
+
+```
+Theoretical max power: P = rho x g x Q x H x eta
+rho = 1000 kg/m3 (water density)
+g   = 9.81 m/s2
+Q   = flow rate (m3/s)
+H   = head height (meters)
+eta = turbine efficiency (0.70 - 0.95)
+```
+
+ML anomaly detection is trained on 4,001 real hydropower samples using an isolation forest model. Any reading that deviates beyond statistical bounds is flagged automatically.
+
+Trust score thresholds:
+- Above 0.85: auto-approved
+- 0.50 to 0.85: manual review queue
+- Below 0.50: rejected, fraud reason logged on-chain
 
 ---
 
