@@ -25,13 +25,13 @@ const fs   = require('fs').promises;
 const path = require('path');
 const { register } = require('../monitoring/metrics');
 
-// ─── AUTH MIDDLEWARE (was defined but never wired — fixed here) ────────────
+// ─── AUTH MIDDLEWARE (was defined but never wired — fixed here) ─────────────
 const auth = require('../middleware/auth');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// ─── SECURITY MIDDLEWARE ────────────────────────────────────────────────────
+// ─── SECURITY MIDDLEWARE ───────────────────────────────────────────────
 app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
@@ -51,7 +51,7 @@ const authLimiter = rateLimit({
   message: 'Too many auth attempts, please try again later'
 });
 
-// ─── REQUEST LOGGING ────────────────────────────────────────────────────────
+// ─── REQUEST LOGGING ────────────────────────────────────────────────
 app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
@@ -80,7 +80,7 @@ app.get('/health', (req, res) => {
       renewableAdapter: true,
       multiTenant: 'mvp',
       carbonCredits: true,
-      auth: true   // ← now true
+      auth: true
     }
   });
 });
@@ -104,15 +104,6 @@ app.get('/metrics', async (req, res) => {
  * POST /api/auth/login
  * Body: { email, password }
  * Returns: { token, expiresIn, user }
- *
- * Credentials are loaded from environment variables:
- *   ADMIN_EMAIL    / ADMIN_PASSWORD    → role: admin
- *   OPERATOR_EMAIL / OPERATOR_PASSWORD → role: operator
- *
- * Fallback demo credentials (only when NODE_ENV !== 'production'):
- *   admin@mrv.local / admin-secret      → role: admin
- *   operator@mrv.local / op-secret      → role: operator
- *   viewer@mrv.local / view-secret      → role: viewer
  */
 app.post('/api/auth/login', authLimiter, (req, res) => {
   const { email, password } = req.body;
@@ -124,7 +115,6 @@ app.post('/api/auth/login', authLimiter, (req, res) => {
     });
   }
 
-  // Build credential table from env + demo fallback
   const isProd = process.env.NODE_ENV === 'production';
   const credentials = [
     {
@@ -168,8 +158,8 @@ app.post('/api/auth/login', authLimiter, (req, res) => {
 
 /**
  * GET /api/auth/demo-token
- * Returns a short-lived (1h) viewer JWT for hackathon judges / API explorers.
- * Disabled in production (NODE_ENV=production).
+ * Returns a short-lived (1h) viewer JWT for hackathon judges.
+ * Disabled in production.
  */
 app.get('/api/auth/demo-token', (req, res) => {
   if (process.env.NODE_ENV === 'production') {
@@ -214,7 +204,6 @@ const forecasterModelPath = path.join(__dirname, '../../data/forecaster-model.js
   }
 })();
 
-// Train: operator or admin only
 app.post('/api/v1/forecast/train', auth.jwt, auth.requireRole('admin', 'operator'), async (req, res) => {
   try {
     const { readings } = req.body;
@@ -255,7 +244,6 @@ app.post('/api/v1/forecast/train', auth.jwt, auth.requireRole('admin', 'operator
   }
 });
 
-// Read forecast: any authenticated user
 app.get('/api/v1/forecast', auth.jwt, async (req, res) => {
   try {
     const hours = parseInt(req.query.hours) || 24;
@@ -285,7 +273,6 @@ app.get('/api/v1/forecast', auth.jwt, async (req, res) => {
   }
 });
 
-// Check underperformance: any authenticated user
 app.post('/api/v1/forecast/check', auth.jwt, async (req, res) => {
   try {
     const { actualGeneration, forecastStep } = req.body;
@@ -349,7 +336,6 @@ const feedbackStore = new FeedbackStore();
   console.log('✅ Feedback store initialized');
 })();
 
-// Submit feedback: operator or admin
 app.post('/api/v1/feedback', auth.jwt, auth.requireRole('admin', 'operator'), async (req, res) => {
   try {
     const { readingId, originalLabel, correctLabel, confidence, reading, notes } = req.body;
@@ -390,7 +376,6 @@ app.post('/api/v1/feedback', auth.jwt, auth.requireRole('admin', 'operator'), as
   }
 });
 
-// Read feedback stats: any authenticated user
 app.get('/api/v1/feedback/stats', auth.jwt, async (req, res) => {
   try {
     const stats    = feedbackStore.getStats();
@@ -402,7 +387,6 @@ app.get('/api/v1/feedback/stats', auth.jwt, async (req, res) => {
   }
 });
 
-// List feedback: any authenticated user
 app.get('/api/v1/feedback', auth.jwt, async (req, res) => {
   try {
     const limit    = parseInt(req.query.limit) || 50;
@@ -417,110 +401,25 @@ app.get('/api/v1/feedback', auth.jwt, async (req, res) => {
 console.log('✅ Active learning endpoints enabled: /api/v1/feedback/* [JWT protected]');
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 🏭 MULTI-PLANT MANAGEMENT ENDPOINTS
-//    GET /api/v1/plants*         → public (optionalJWT for richer response)
-//    POST /api/v1/plants         → JWT + operator/admin
-//    GET /api/v1/plants/aggregate/stats → JWT
+// 🏾d MULTI-PLANT MANAGEMENT  [P3: PostgreSQL] [P4: express-validator]
+//
+// The feat(p3+p4+p5) commit created src/api/v1/plants.js (PlantRepository
+// backed by PostgreSQL with in-memory fallback) and src/middleware/validate.js
+// (plantCreateRules using express-validator) but never mounted the router.
+// This commit wires it in, replacing the discarded `let plants = []` block.
+//
+//    POST /api/v1/plants             → JWT + operator/admin (validated)
+//    GET  /api/v1/plants             → public
+//    GET  /api/v1/plants/:id         → public
+//    GET  /api/v1/plants/aggregate/stats → JWT
 // ═══════════════════════════════════════════════════════════════════════════
 
-let plants = [];
-
-// Register plant: operator or admin only
-app.post('/api/v1/plants', auth.jwt, auth.requireRole('admin', 'operator'), async (req, res) => {
-  try {
-    const { plant_id, name, location, capacity_mw, plant_type } = req.body;
-
-    if (!plant_id || !name || !capacity_mw) {
-      return res.status(400).json({
-        error: 'Missing required fields',
-        required: ['plant_id', 'name', 'capacity_mw']
-      });
-    }
-
-    if (plants.find(p => p.plant_id === plant_id)) {
-      return res.status(409).json({ error: 'Plant already exists', plant_id });
-    }
-
-    const plant = {
-      plant_id,
-      name,
-      location:   location   || null,
-      capacity_mw: parseFloat(capacity_mw),
-      plant_type: plant_type || 'hydro',
-      status:     'active',
-      created_by: req.user.email,
-      created_at: new Date().toISOString()
-    };
-
-    plants.push(plant);
-
-    res.status(201).json({ status: 'success', message: 'Plant registered successfully', plant });
-  } catch (error) {
-    console.error('[PLANTS] Registration error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// List plants: public
-app.get('/api/v1/plants', auth.optionalJWT, async (req, res) => {
-  try {
-    const status = req.query.status;
-    const type   = req.query.type;
-    let filtered = plants;
-
-    if (status) filtered = filtered.filter(p => p.status === status);
-    if (type)   filtered = filtered.filter(p => p.plant_type === type);
-
-    res.json({
-      status: 'success',
-      count: filtered.length,
-      total_capacity_mw: filtered.reduce((sum, p) => sum + p.capacity_mw, 0),
-      plants: filtered
-    });
-  } catch (error) {
-    console.error('[PLANTS] List error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Get single plant: public
-app.get('/api/v1/plants/:id', auth.optionalJWT, async (req, res) => {
-  try {
-    const plant = plants.find(p => p.plant_id === req.params.id);
-
-    if (!plant) {
-      return res.status(404).json({ error: 'Plant not found', plant_id: req.params.id });
-    }
-
-    res.json({ status: 'success', plant });
-  } catch (error) {
-    console.error('[PLANTS] Get error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Aggregate stats: JWT required (operational data)
-app.get('/api/v1/plants/aggregate/stats', auth.jwt, async (req, res) => {
-  try {
-    const stats = {
-      total_plants:    plants.length,
-      active_plants:   plants.filter(p => p.status === 'active').length,
-      total_capacity_mw: plants.reduce((sum, p) => sum + p.capacity_mw, 0),
-      by_type:   {},
-      by_status: {}
-    };
-
-    plants.forEach(p => { stats.by_type[p.plant_type]  = (stats.by_type[p.plant_type]  || 0) + 1; });
-    plants.forEach(p => { stats.by_status[p.status]    = (stats.by_status[p.status]    || 0) + 1; });
-
-    res.json({ status: 'success', ...stats });
-  } catch (error) {
-    console.error('[PLANTS] Aggregate error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-console.log('✅ Multi-plant endpoints enabled: /api/v1/plants/* [POST protected, GETs public]');
+const { router: plantsRouter } = require('./v1/plants');
+app.use('/api/v1/plants', plantsRouter);
+console.log('✅ Multi-plant endpoints enabled: /api/v1/plants/* [PostgreSQL + express-validator]');
+console.log('   ✔ POST /api/v1/plants  [JWT operator+ | capacity_mw validated 0–10000]');
+console.log('   ✔ GET  /api/v1/plants  [public | storage: postgresql / in-memory fallback]');
+console.log('   ✔ GET  /api/v1/plants/aggregate/stats  [JWT]');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 💰 CARBON CREDITS ENDPOINTS
@@ -553,11 +452,8 @@ const { router: tenantRouter }       = require('./v1/tenants');
 const { router: billingRouter }      = require('./v1/billing');
 const { router: subscriptionRouter } = require('./v1/subscriptions');
 
-// Tenant admin routes: only admins can create/manage tenants
 app.use('/api/v1/tenants',       auth.jwt, auth.requireRole('admin'),            tenantRouter);
-// Billing: admins only
 app.use('/api/v1/billing',       auth.jwt, auth.requireRole('admin'),            billingRouter);
-// Subscriptions: any authenticated user (operators subscribe their tenants)
 app.use('/api/v1/subscriptions', auth.jwt,                                       subscriptionRouter);
 
 console.log('✅ Multi-tenant endpoints enabled:');
@@ -575,11 +471,11 @@ app.get('/api/features', (req, res) => {
   res.json({
     production_ready: {
       core_mrv_engine:    { status: '100%', tested: true },
-      ml_fraud_detection: { status: '100%', accuracy: '98.3%', tested: true },
-      hedera_integration: { status: '100%', testnet: true,     tested: true },
-      rest_api:           { status: '100%', auth: true,         tested: true },
-      auth_jwt_rbac:      { status: '100%', wired: true,        tested: true },  // ← NEW
-      docker_deployment:  { status: '100%', compose: true,      tested: false },
+      ml_fraud_detection: { status: '100%', accuracy: '87%+', tested: true },
+      hedera_integration: { status: '100%', testnet: true,    tested: true },
+      rest_api:           { status: '100%', auth: true,        tested: true },
+      auth_jwt_rbac:      { status: '100%', wired: true,       tested: true },
+      docker_deployment:  { status: '100%', compose: true,     tested: false },
       monitoring:         { status: '100%', prometheus: true, grafana: true },
       investor_dashboard: { status: '100%', public_api: true, tested: true },
       rate_limiting:      { status: '100%', tested: true },
@@ -587,7 +483,7 @@ app.get('/api/features', (req, res) => {
       forecasting:        { status: '100%', algorithm: 'Holt-Winters', integrated: true, tested: true },
       clustering:         { status: '100%', algorithm: 'K-means',      integrated: true, tested: true },
       active_learning:    { status: '100%', feedback_system: true,      integrated: true, tested: true },
-      multi_plant:        { status: '100%', api: true, integrated: true, tested: true },
+      multi_plant:        { status: '100%', api: true, storage: 'postgresql', validated: true, tested: true },
       renewable_adapter:  { status: '100%', energy_types: ['hydro', 'solar', 'wind', 'biomass'], tested: true },
       carbon_credits:     { status: '90%',  stream1: true, revenue: '₹688Cr', mock_apis: true, tested: true }
     },
@@ -599,11 +495,11 @@ app.get('/api/features', (req, res) => {
       }
     },
     metadata: {
-      version:                    '1.6.2',
-      last_updated:               new Date().toISOString(),
-      total_modules:              17,
-      production_ready_count:     16,
-      completion_percentage:      94
+      version:                '1.6.2',
+      last_updated:           new Date().toISOString(),
+      total_modules:          17,
+      production_ready_count: 16,
+      completion_percentage:  94
     }
   });
 });
@@ -634,9 +530,9 @@ app.get('/', (req, res) => {
     },
     endpoints: {
       core: {
-        health:  '/health',
-        metrics: '/metrics',
-        features:'/api/features'
+        health:   '/health',
+        metrics:  '/metrics',
+        features: '/api/features'
       },
       auth: {
         login:      'POST /api/auth/login',
@@ -652,18 +548,18 @@ app.get('/', (req, res) => {
         check:   'POST /api/v1/forecast/check  [JWT]'
       },
       carbon_credits: {
-        prices:      'GET  /api/v1/carbon-credits/marketplace/prices  [public]',
-        calculate:   'POST /api/v1/carbon-credits/calculate  [JWT]',
-        mint:        'POST /api/v1/carbon-credits/mint  [JWT]',
-        sell:        'POST /api/v1/carbon-credits/marketplace/sell  [JWT]',
-        verra:       'POST /api/v1/carbon-credits/verra/register  [JWT]',
-        goldstandard:'POST /api/v1/carbon-credits/goldstandard/register  [JWT]'
+        prices:       'GET  /api/v1/carbon-credits/marketplace/prices  [public]',
+        calculate:    'POST /api/v1/carbon-credits/calculate  [JWT]',
+        mint:         'POST /api/v1/carbon-credits/mint  [JWT]',
+        sell:         'POST /api/v1/carbon-credits/marketplace/sell  [JWT]',
+        verra:        'POST /api/v1/carbon-credits/verra/register  [JWT]',
+        goldstandard: 'POST /api/v1/carbon-credits/goldstandard/register  [JWT]'
       }
     }
   });
 });
 
-// ─── 404 HANDLER ────────────────────────────────────────────────────────────
+// ─── 404 HANDLER ────────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
     error:   'Not found',
@@ -672,7 +568,7 @@ app.use((req, res) => {
   });
 });
 
-// ─── ERROR HANDLER ──────────────────────────────────────────────────────────
+// ─── ERROR HANDLER ────────────────────────────────────────────────────────────────────────
 app.use((error, req, res, next) => {
   console.error('[SERVER ERROR]', error);
   res.status(500).json({
@@ -682,7 +578,7 @@ app.use((error, req, res, next) => {
   });
 });
 
-// ─── START SERVER ───────────────────────────────────────────────────────────
+// ─── START SERVER ────────────────────────────────────────────────────────────────────────
 if (require.main === module) {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n${'='.repeat(70)}`);
@@ -699,7 +595,7 @@ if (require.main === module) {
     console.log(`   • Forecasting (Holt-Winters)  [JWT protected]`);
     console.log(`   • Clustering (K-means)         [JWT protected]`);
     console.log(`   • Active Learning              [JWT protected]`);
-    console.log(`   • Multi-Plant Management       [POST protected]`);
+    console.log(`   • Multi-Plant (PostgreSQL)     [POST protected + validated]`);
     console.log(`   • Renewable Adapter            [4 energy types]`);
     console.log(`   • Carbon Credits (90%)         [JWT protected]`);
     console.log(`   • Multi-Tenant MVP             [JWT + admin]`);
