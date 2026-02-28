@@ -38,7 +38,7 @@ npm run api
 npm run demo
 ```
 
-** [Complete Setup Guide](./QUICK_START.md)** | **📊 [Deployment Status](./DEPLOYMENT_STATUS.md)**
+** [Complete Setup Guide](./QUICK_START.md)** | 
 
 ---
 
