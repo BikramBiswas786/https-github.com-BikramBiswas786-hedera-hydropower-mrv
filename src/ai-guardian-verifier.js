@@ -1,10 +1,15 @@
 /**
  * AI Guardian Verifier Module - PRODUCTION GRADE
  * Trust scoring with actual validation in batch mode
+ *
+ * FIX Issue 1: Layer 4 (statistical) now routes through MLAnomalyDetector
+ * (IsolationForest) instead of legacy Z-score AnomalyDetector.
+ * Legacy AnomalyDetector is kept for Layers 1/2/3/5 via completeValidation.
  */
 
 const crypto = require('crypto');
-const AnomalyDetector = require('./anomaly-detector');
+const AnomalyDetector = require('./anomaly-detector');           // Layers 1,2,3,5 (legacy rule-based)
+const { getMLDetector } = require('./ml/MLAnomalyDetector');    // Layer 4 ML (IsolationForest)
 
 class AIGuardianVerifier {
   constructor(config = {}) {
@@ -21,13 +26,16 @@ class AIGuardianVerifier {
       ...config
     };
     this.privateKey = crypto.randomBytes(32);
-    this.detector = new AnomalyDetector(config.detectorConfig);
-    this.previousReadings = new Map(); // Track previous readings by deviceId
-    this.historicalReadings = new Map(); // Track historical data by deviceId
+    this.detector = new AnomalyDetector(config.detectorConfig);  // rule-based (layers 1,2,3,5)
+    this.mlDetector = getMLDetector();                           // ML (layer 4)
+    this.previousReadings = new Map();
+    this.historicalReadings = new Map();
   }
 
   /**
-   * Calculate trust score from validation results
+   * Calculate trust score from validation results.
+   * FIX Issue 1: Statistical block now uses ML score (isAnomaly) when present,
+   * falls back to Z-score only for legacy compatibility.
    */
   calculateTrustScore(validationResults) {
     if (!validationResults) {
@@ -37,44 +45,49 @@ class AIGuardianVerifier {
     const weights = this.config.weights;
     let score = 0;
 
-    // Physics check
+    // Layer 1 — Physics
     if (validationResults.physics?.isValid !== false) {
       score += weights.physics * (validationResults.physics?.score ?? 1.0);
     } else {
-      score += weights.physics * 0; // Explicit fail contributes 0
+      score += weights.physics * 0;
     }
 
-    // Temporal consistency
+    // Layer 2 — Temporal consistency
     if (validationResults.temporal?.isValid !== false) {
       score += weights.temporal * (validationResults.temporal?.score ?? 1.0);
     } else {
       score += weights.temporal * 0;
     }
 
-    // Environmental bounds
+    // Layer 3 — Environmental bounds
     if (validationResults.environmental?.isValid !== false) {
       score += weights.environmental * (validationResults.environmental?.score ?? 1.0);
     } else {
       score += weights.environmental * 0;
     }
 
-    // Statistical anomaly
+    // Layer 4 — Statistical anomaly
+    // FIX: Use ML-based score when available (isAnomaly field present = ML result)
     if (validationResults.statistical) {
-      const zScore = validationResults.statistical.zScore ?? 1.5;
-      let statScore = 1.0;
-      
-      if (zScore < 1.0) statScore = 1.0;
-      else if (zScore < 2.0) statScore = 0.95;
-      else if (zScore < 2.5) statScore = 0.90;
-      else if (zScore < 3.0) statScore = 0.80;
-      else statScore = 0.30;
-      
-      score += weights.statistical * statScore;
+      if (typeof validationResults.statistical.isAnomaly !== 'undefined') {
+        // ML Isolation Forest result — use score directly
+        score += weights.statistical * (validationResults.statistical.score ?? 1.0);
+      } else {
+        // Legacy Z-score fallback (backwards compatibility)
+        const zScore = validationResults.statistical.zScore ?? 1.5;
+        let statScore = 1.0;
+        if      (zScore < 1.0) statScore = 1.0;
+        else if (zScore < 2.0) statScore = 0.95;
+        else if (zScore < 2.5) statScore = 0.90;
+        else if (zScore < 3.0) statScore = 0.80;
+        else                   statScore = 0.30;
+        score += weights.statistical * statScore;
+      }
     } else {
       score += weights.statistical;
     }
 
-    // Consistency check
+    // Layer 5 — Consistency
     if (validationResults.consistency?.isValid !== false) {
       score += weights.consistency * (validationResults.consistency?.score ?? 1.0);
     } else {
@@ -88,7 +101,7 @@ class AIGuardianVerifier {
    * Determine verification status
    */
   determineVerificationStatus(trustScore) {
-    const autoThreshold = this.config.autoApproveThreshold;
+    const autoThreshold   = this.config.autoApproveThreshold;
     const manualThreshold = this.config.manualReviewThreshold;
 
     if (trustScore >= autoThreshold) {
@@ -120,7 +133,7 @@ class AIGuardianVerifier {
    */
   makeVerificationDecision(validationResults) {
     const trustScore = this.calculateTrustScore(validationResults);
-    const decision = this.determineVerificationStatus(trustScore);
+    const decision   = this.determineVerificationStatus(trustScore);
 
     return {
       ...decision,
@@ -135,34 +148,28 @@ class AIGuardianVerifier {
    */
   generateAttestation(telemetry, validationResults) {
     const trustScore = this.calculateTrustScore(validationResults);
-    const decision = this.determineVerificationStatus(trustScore);
+    const decision   = this.determineVerificationStatus(trustScore);
 
     const attestation = {
-      deviceId: telemetry.deviceId,
-      timestamp: telemetry.timestamp,
+      deviceId:           telemetry.deviceId,
+      timestamp:          telemetry.timestamp,
       verificationStatus: decision.status,
       verificationMethod: decision.method,
       trustScore,
-      checks: validationResults,
-      readings: telemetry.readings
+      checks:             validationResults,
+      readings:           telemetry.readings
     };
 
-    // Add rejection reasons
     if (decision.status === 'REJECTED' || decision.status === 'FLAGGED') {
       attestation.rejectionReasons = [];
-      
-      if (validationResults.physics?.isValid === false) {
+      if (validationResults.physics?.isValid === false)
         attestation.rejectionReasons.push(validationResults.physics.reason || 'Physics check failed');
-      }
-      if (validationResults.temporal?.isValid === false) {
+      if (validationResults.temporal?.isValid === false)
         attestation.rejectionReasons.push(validationResults.temporal.reason || 'Temporal check failed');
-      }
-      if (validationResults.environmental?.isValid === false) {
+      if (validationResults.environmental?.isValid === false)
         attestation.rejectionReasons.push(validationResults.environmental.reason || 'Environmental check failed');
-      }
-      if (validationResults.statistical?.status === 'OUTLIER') {
+      if (validationResults.statistical?.status === 'OUTLIER')
         attestation.rejectionReasons.push(validationResults.statistical.reason || 'Statistical outlier detected');
-      }
     }
 
     return this.signAttestation(attestation);
@@ -172,7 +179,7 @@ class AIGuardianVerifier {
    * Sign attestation
    */
   signAttestation(attestation) {
-    const data = JSON.stringify(attestation);
+    const data      = JSON.stringify(attestation);
     const signature = crypto
       .createHmac('sha256', this.privateKey)
       .update(data)
@@ -191,18 +198,18 @@ class AIGuardianVerifier {
   verifySignature(signedAttestation) {
     const { signature, publicKey, ...attestation } = signedAttestation;
     const data = JSON.stringify(attestation);
-    
     const expectedSignature = crypto
       .createHmac('sha256', this.privateKey)
       .update(data)
       .digest('hex');
-
     return signature === expectedSignature;
   }
 
   /**
-   * Process batch with ACTUAL validation using completeValidation
-   * ✅ FIXED: Using detector.completeValidation() with proper context
+   * Process batch with ACTUAL validation.
+   * FIX Issue 1: After running completeValidation (Layers 1/2/3/5),
+   * we override the statistical result (Layer 4) with the ML IsolationForest result.
+   * This ensures the advanced ML model is always used for anomaly detection.
    */
   processBatch(readings) {
     if (!Array.isArray(readings)) {
@@ -210,14 +217,11 @@ class AIGuardianVerifier {
     }
 
     return readings.map(reading => {
-      const deviceId = reading.deviceId;
-      
-      // Get previous reading and historical data for this device
+      const deviceId      = reading.deviceId;
       const previousReading = this.previousReadings.get(deviceId);
-      const historicalData = this.historicalReadings.get(deviceId) || [];
-      
-      // ✅ FIX: Use completeValidation() method from AnomalyDetector
-      // Signature: completeValidation(telemetry, previousReading, historicalReadings, siteConfig)
+      const historicalData  = this.historicalReadings.get(deviceId) || [];
+
+      // Layers 1,2,3,5 via legacy rule-based detector
       const validationResults = this.detector.completeValidation(
         reading,
         previousReading,
@@ -225,10 +229,35 @@ class AIGuardianVerifier {
         this.config.siteConfig || null
       );
 
-      // Update tracking for next iteration
+      // FIX Issue 1: Override Layer 4 with ML IsolationForest result
+      const ml = this.mlDetector.detect(reading);
+      let mlScore, mlStatus;
+      if (!ml.isAnomaly) {
+        mlScore  = ml.confidence > 0.6 ? 1.0 : 0.90;
+        mlStatus = ml.confidence > 0.6 ? 'NORMAL' : 'ACCEPTABLE';
+      } else {
+        if      (ml.confidence < 0.30) { mlScore = 0.70; mlStatus = 'QUESTIONABLE'; }
+        else if (ml.confidence < 0.60) { mlScore = 0.50; mlStatus = 'SUSPICIOUS';   }
+        else                            { mlScore = 0.20; mlStatus = 'OUTLIER';      }
+      }
+      validationResults.statistical = {
+        score:        parseFloat(mlScore.toFixed(4)),
+        status:       mlStatus,
+        isAnomaly:    ml.isAnomaly,
+        confidence:   ml.confidence,
+        anomalyScore: ml.score,
+        method:       ml.method || 'IsolationForest',
+        trainedOn:    ml.trainedOn,
+        trainedAt:    ml.trainedAt,
+        reason:       ml.isAnomaly
+          ? `ML Isolation Forest anomaly (confidence=${(ml.confidence*100).toFixed(0)}%)`
+          : null
+      };
+
+      // Update tracking
       this.previousReadings.set(deviceId, reading);
       historicalData.push(reading);
-      this.historicalReadings.set(deviceId, historicalData.slice(-100)); // Keep last 100 readings
+      this.historicalReadings.set(deviceId, historicalData.slice(-100));
 
       return this.generateAttestation(reading, validationResults);
     });
@@ -239,22 +268,21 @@ class AIGuardianVerifier {
    */
   verify(data) {
     const trustScore = this.calculateTrustScore({
-      physics: { isValid: true, score: 0.95 },
-      temporal: { isValid: true, score: 0.92 },
+      physics:       { isValid: true, score: 0.95 },
+      temporal:      { isValid: true, score: 0.92 },
       environmental: { isValid: true, score: 0.98 },
-      statistical: { isValid: true, score: 0.95, zScore: 1.5 }
+      statistical:   { isAnomaly: false, score: 0.95, confidence: 0.8 }
     });
-    
+
     const verified = trustScore >= this.config.manualReviewThreshold;
-    
-    return { 
-      verified, 
+    return {
+      verified,
       trustScore,
       threshold: this.config.manualReviewThreshold,
       details: {
-        dataQuality: 0.95,
-        consistency: 0.92,
-        timeliness: 0.98
+        dataQuality:  0.95,
+        consistency:  0.92,
+        timeliness:   0.98
       }
     };
   }

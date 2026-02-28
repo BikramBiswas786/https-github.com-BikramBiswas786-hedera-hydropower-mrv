@@ -8,7 +8,8 @@ const {
 } = require('@hashgraph/sdk');
 require('dotenv').config();
 
-const EF_GRID = parseFloat(process.env.EF_GRID || '0.8');
+// FIX Issue 3: standardized EF_GRID to 0.82 (was 0.8), env-configurable
+const EF_GRID = parseFloat(process.env.EF_GRID || '0.82');
 
 // ============================================
 // REAL ML — ISOLATION FOREST ANOMALY DETECTOR
@@ -33,12 +34,18 @@ function getClient() {
   if (_hederaAvailable === false) return null;
   if (_client) return { client: _client, operatorKey: _operatorKey };
 
-  const OPERATOR_ID     = process.env.HEDERA_OPERATOR_ID;
-  const OPERATOR_KEY_STR = process.env.HEDERA_OPERATOR_KEY;
-  const AUDIT_TOPIC_ID  = process.env.AUDIT_TOPIC_ID;
+  // FIX Issue 2: accept both HEDERA_OPERATOR_ID and HEDERA_ACCOUNT_ID
+  // and both HEDERA_OPERATOR_KEY and HEDERA_PRIVATE_KEY for Vercel compatibility
+  const OPERATOR_ID      = process.env.HEDERA_OPERATOR_ID || process.env.HEDERA_ACCOUNT_ID;
+  const OPERATOR_KEY_STR = process.env.HEDERA_OPERATOR_KEY || process.env.HEDERA_PRIVATE_KEY;
+  const AUDIT_TOPIC_ID   = process.env.AUDIT_TOPIC_ID;
 
   if (!OPERATOR_ID || !OPERATOR_KEY_STR || !AUDIT_TOPIC_ID) {
-    console.warn('[EngineV1] Hedera credentials missing, running in mock mode');
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[EngineV1] FATAL: Hedera credentials missing in production — set HEDERA_ACCOUNT_ID, HEDERA_PRIVATE_KEY, AUDIT_TOPIC_ID');
+    } else {
+      console.warn('[EngineV1] Hedera credentials missing, running in mock mode (dev/test only)');
+    }
     _hederaAvailable = false;
     return null;
   }
@@ -364,10 +371,10 @@ class EngineV1 {
     };
 
     // ── Hedera HCS publish ─────────────────────────────────────────
-    const hedera     = getClient();
+    const hedera       = getClient();
     const auditTopicId = getAuditTopicId();
-    let transactionId = `mock-${Date.now()}`;
-    let status        = 'MOCK';
+    let transactionId  = `mock-${Date.now()}`;
+    let status         = 'MOCK';
 
     if (hedera && auditTopicId) {
       try {
@@ -382,13 +389,16 @@ class EngineV1 {
         const receipt = await resp.getReceipt(hedera.client);
         transactionId = resp.transactionId.toString();
         status        = receipt.status.toString();
+        console.log(`[EngineV1] HCS published: ${transactionId}`);
       } catch (error) {
         console.warn(`[EngineV1] HCS submission failed: ${error.message}`);
       }
+    } else {
+      console.warn('[EngineV1] Running in MOCK mode — set HEDERA_ACCOUNT_ID, HEDERA_PRIVATE_KEY, AUDIT_TOPIC_ID for real transactions');
     }
 
     history.push(telemetry.readings);
-    return { attestation, transactionId, status };
+    return { attestation, transactionId, status, topicId: auditTopicId || null };
   }
 
   async verifyBatch(telemetryArray) {
