@@ -1,4 +1,4 @@
-# 🧪 Testing Guide - Hedera Hydropower MRV v1.5.0
+#  Testing Guide - Hedera Hydropower MRV v1.5.0
 
 **Last Updated:** February 22, 2026, 1:15 AM IST  
 **Version:** 1.5.0  
@@ -6,7 +6,7 @@
 
 ---
 
-## 🚀 Quick Start Testing
+##  Quick Start Testing
 
 ### Prerequisites
 ```bash
