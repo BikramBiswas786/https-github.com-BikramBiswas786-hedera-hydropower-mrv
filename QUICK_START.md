@@ -1,6 +1,6 @@
 # Quick Start Guide - Hedera Hydropower MRV
 
-## 🚀 Production-Ready Setup (5 minutes)
+##  Production-Ready Setup (5 minutes)
 
 Your local environment is **pre-configured** to match the live Vercel deployment with real Hedera testnet credentials.
 
@@ -162,7 +162,7 @@ mrv_recs_minted_total{plant_id="PLANT-HP-001"} 0.72
 
 ---
 
-## 🔍 What Just Happened?
+##  What Just Happened?
 
 Your local API server is now running with **production Hedera credentials**:
 
@@ -180,7 +180,7 @@ Your local API server is now running with **production Hedera credentials**:
 
 ---
 
-## 👍 Compare with Production
+##  Compare with Production
 
 Your local setup is **identical** to the live Vercel deployment:
 
@@ -203,17 +203,17 @@ npm run demo
 ```
 
 **Demo Flow (5 steps):**
-1. 🔐 Create Device DID → `did:hedera:testnet:z545...`
-2. 🪙 Link HREC Token → `0.0.7964264`
-3. ✅ Normal Reading → APPROVED (trust score: 100%)
-4. ⚠️ Fraud Attempt → REJECTED (trust score: 60%)
-5. 💰 Mint HREC → 4.87 MWh → 3.896 tCO2e credits
+1.  Create Device DID → `did:hedera:testnet:z545...`
+2.  Link HREC Token → `0.0.7964264`
+3.  Normal Reading → APPROVED (trust score: 100%)
+4.  Fraud Attempt → REJECTED (trust score: 60%)
+5.  Mint HREC → 4.87 MWh → 3.896 tCO2e credits
 
 All operations are **permanently recorded** on Hedera HCS topic.
 
 ---
 
-## 🚀 Next Steps
+##  Next Steps
 
 ### For Developers
 
@@ -260,7 +260,7 @@ All operations are **permanently recorded** on Hedera HCS topic.
 
 ---
 
-## ⚠️ Troubleshooting
+##  Troubleshooting
 
 ### Issue: `[EngineV1] Hedera credentials missing, running in mock mode`
 
@@ -303,7 +303,7 @@ Get-Process -Id (Get-NetTCPConnection -LocalPort 3000).OwningProcess | Stop-Proc
 
 ---
 
-## 🔗 Useful Links
+##  Useful Links
 
 - **Live Demo:** https://hydropower-mrv-19feb26.vercel.app
 - **GitHub Repo:** https://github.com/BikramBiswas786/Hedera-hydropower-dMRV-with-5-layer-verification-
