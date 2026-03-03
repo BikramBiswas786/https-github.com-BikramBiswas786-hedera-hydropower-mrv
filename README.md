@@ -580,3 +580,18 @@ Everything's in the docs/ folder.
 - [Security](docs/SECURITY.md) - Security
 
 *We cleaned up 35+ duplicate files in Feb 2026. Old stuff is in docs/archived/ if you need it.*
+## Known Issues & Roadmap
+### P1 - Replay Protection (not yet implemented)
+- **Issue**: Duplicate timestamp submissions are accepted as FIRST_READING
+- **Root cause**: No persistent seen-timestamp store in telemetry.js route
+- **Fix**: Wire Redis (already in rateLimiter.js) to dedup by plantId+deviceId+timestamp
+- **Workaround**: HCS immutability means both records exist on-chain; manual audit possible
+### P2 - flags[] always empty in API response  
+- **Issue**: erification_details.flags returns [] even on FLAGGED readings
+- **Root cause**: engine-v1.js uses physicsCheck/temporalCheck/environmentalCheck but never writes to flags array
+- **Fix**: Map failed checks to flags in route response builder
+- **Impact**: Cosmetic only — status and trust_score are accurate
+### P3 - Redis rate limiter degraded
+- **Issue**: Redis not running, rate limiter falls back to no-op
+- **Fix**: docker run -d -p 6379:6379 redis:alpine or set REDIS_URL in .env
+- **Impact**: API accepts unlimited requests per window in current state
