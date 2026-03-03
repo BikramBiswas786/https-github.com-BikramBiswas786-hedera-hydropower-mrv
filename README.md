@@ -1,63 +1,89 @@
-# ⚡ Hedera Hydropower MRV System
+# Hedera Hydropower dMRV System
 
-[![CI Tests](https://github.com/BikramBiswas786/Hedera-hydropower-dMRV-with-5-layer-verification-/actions/workflows/test.yml/badge.svg)](https://github.com/BikramBiswas786/Hedera-hydropower-dMRV-with-5-layer-verification-/actions/workflows/test.yml)
-[![Test Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen.svg)](./tests)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![Production Ready](https://img.shields.io/badge/status-production--ready-success.svg)](./LIVE_DEMO_RESULTS.md)
+[![Tests](https://img.shields.io/badge/tests-237%20passing-success)](./tests)
+[![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen)](./tests)
+[![Hedera](https://img.shields.io/badge/Hedera-Testnet-blue)](https://hashscan.io/testnet/topic/0.0.7462776)
+[![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 
-**AngelHack Apex 2026 • Sustainability Track 🌱**
+**Blockchain-powered carbon verification for small-scale hydropower plants**
 
-A blockchain-powered Measurement, Reporting & Verification (MRV) platform for small-scale hydropower using Hedera DLT, AI-enhanced fraud detection, and UN CDM ACM0002 methodology.
+A production-ready digital MRV (Monitoring, Reporting & Verification) platform that automates carbon credit issuance for 1-15 MW hydropower projects using Hedera DLT, AI-enhanced verification, and UN CDM ACM0002 methodology.
+
+**Deployment**: [hydropower-mrv-19feb26.vercel.app](https://hydropower-mrv-19feb26.vercel.app/) | **Testnet**: [HashScan Topic 0.0.7462776](https://hashscan.io/testnet/topic/0.0.7462776)
 
 ---
 
-## 🎉 **PRODUCTION READY - ALL TESTS PASSED!**
+## Problem
 
-**Date**: March 4, 2026 | **Status**: ✅ **6/6 Core Tests Passing**
+Small renewable projects cannot afford traditional carbon credit verification:
 
+- **Cost**: $15,000-50,000 per project
+- **Time**: 3-6 months manual auditing
+- **Fraud**: 30-40% error rate in manual MRV
+- **Access**: 70% of small projects excluded from carbon markets
+
+**Market opportunity**: 500+ GW of small-scale hydro globally generating 2 billion potential carbon credits annually.
+
+---
+
+## Solution
+
+Automated verification platform combining:
+
+### 5-Layer AI Verification Engine
+1. **Physics Validation** (30%) — Hydropower equation: P = ρ×g×Q×H×η
+2. **Temporal Consistency** (25%) — Pattern analysis over time
+3. **Environmental Bounds** (20%) — Water quality parameters (pH, turbidity, temperature)
+4. **Statistical Anomalies** (15%) — 3-sigma outlier detection
+5. **Device Consistency** (10%) — Cross-reading validation
+
+**Trust Score**: 0-1.0 scale with automatic approval (>0.90), flagging (0.50-0.90), or rejection (<0.50).
+
+### Hedera Blockchain Integration
+- **HCS (Consensus Service)**: Immutable audit trail of all readings
+- **HTS (Token Service)**: Programmable carbon credit tokens (HRECs)
+- **Testnet Proof**: [2000+ transactions on HashScan](https://hashscan.io/testnet/topic/0.0.7462776)
+
+### ACM0002 Compliance
+Implements UN CDM methodology for small-scale grid-connected renewable energy:
 ```
-╔════════════════════════════════════════════════════════╗
-║           TESTING COMPLETE - PRODUCTION READY          ║
-╚════════════════════════════════════════════════════════╝
-
-Test Results:
-  ✅ PS1: PASSED - Valid telemetry (trust: 0.985)
-  ✅ PS2: PASSED - Fraud detection (trust: 0.605)
-  ✅ PS3: PASSED - Environmental violations flagged
-  ✅ PS4: PASSED - Zero-flow fraud blocked (400)
-  ✅ PS5: PASSED - Multi-plant isolation verified
-  ✅ PS6: PASSED - Replay protection working (409)
-
-Summary: 6/6 tests passed
-*** ALL TESTS PASSED - PRODUCTION READY! ***
+ER = BE - PE - LE
+Where: ER = Emission Reductions, BE = Baseline Emissions, 
+       PE = Project Emissions, LE = Leakage Emissions
 ```
 
-[View Complete Test Suite Documentation](./docs/COMPLETE_AUDIT_GUIDEBOOK.md) | [Run Tests Yourself](./RUN_TESTS.ps1)
+---
+
+## Key Results
+
+### Production Test Suite (PS1-PS6)
+
+| Test | Result | Evidence |
+|------|--------|----------|
+| **PS1: Valid Telemetry** | ✅ PASSED | 98.5% trust score, auto-approved |
+| **PS2: Fraud Detection** | ✅ PASSED | 10x inflated reading caught (60.5% trust) |
+| **PS3: Environmental Violations** | ✅ PASSED | pH/turbidity anomalies flagged |
+| **PS4: Zero-Flow Protection** | ✅ PASSED | Impossible readings rejected (400) |
+| **PS5: Multi-Plant Isolation** | ✅ PASSED | Independent transaction IDs |
+| **PS6: Replay Protection** | ✅ PASSED | Duplicate timestamps blocked (409) |
+
+**Test Coverage**: 237 unit tests | 85.3% coverage | 6 production scenarios
+
+### Live Verification
+
+- **Testnet Transactions**: 2000+ on [HashScan](https://hashscan.io/testnet/topic/0.0.7462776)
+- **HCS Topic**: 0.0.7462776 (audit trail)
+- **HTS Token**: 0.0.7964264 (HREC carbon credits)
+- **Response Time**: <2 seconds per verification
+- **Cost**: $0.0001 per transaction
 
 ---
 
-## 📊 **Quick Stats** (March 4, 2026)
-
-| Metric | Value | Evidence |
-|--------|-------|----------|
-| **Core Tests** | 6/6 PASSING | [RUN_TESTS.ps1](./RUN_TESTS.ps1) |
-| **Unit Tests** | 237 PASSING | `npm test` |
-| **Test Coverage** | 85.3% | Jest report |
-| **Hedera Transactions** | 2000+ | [View on HashScan](https://hashscan.io/testnet/topic/0.0.7462776) |
-| **Trust Score (Normal)** | 98.5% | PS1 verified |
-| **Trust Score (Fraud)** | 60.5% | PS2 fraud caught |
-| **Carbon Credits** | 0.72 tCO2e | ACM0002 compliant |
-| **Transaction Cost** | $0.0001 | Per verification |
-| **API Response Time** | <2s | Local/testnet |
-
----
-
-## 🚀 **Quick Start** (< 5 minutes)
+## Quick Start
 
 ### Prerequisites
 - Node.js 18+
 - npm 9+
-- Git
 - Redis (optional, for replay protection)
 
 ### Installation
@@ -70,533 +96,245 @@ cd Hedera-hydropower-dMRV-with-5-layer-verification-
 # Install dependencies
 npm install
 
-# Setup environment (Windows)
-.\setup-local-production.ps1
-
-# Or manually copy .env
+# Configure environment
 cp .env.example .env
 # Edit .env with your Hedera testnet credentials
-```
 
-### Run the System
-
-```bash
 # Start API server
 npm run api
 
-# In another terminal, run core tests
-powershell -ExecutionPolicy Bypass -File .\RUN_TESTS.ps1
-
-# Or run full demo
-npm run demo
+# Run tests (in another terminal)
+npm test
 ```
 
-**[📖 Complete Setup Guide](./QUICK_START.md)** | **[🎬 Video Demo Guide](./DEMO_GUIDE.md)**
+**Detailed guides**: [QUICK_START.md](./QUICK_START.md) | [Setup Instructions](./README-SETUP.md)
 
 ---
 
-## 🌐 **Live Deployment**
-
-### Production Environment
-🔗 **Deployment**: [hydropower-mrv-19feb26.vercel.app](https://hydropower-mrv-19feb26.vercel.app/)
-
-### Live Endpoints
-- [API Status](https://hydropower-mrv-19feb26.vercel.app/api/status) — System health and Hedera resources
-- [Live Demo](https://hydropower-mrv-19feb26.vercel.app/api/demo) — 5-step E2E fraud detection flow
-- [Hedera Topic](https://hashscan.io/testnet/topic/0.0.7462776) — Immutable audit trail
-- [HREC Token](https://hashscan.io/testnet/token/0.0.7964264) — Carbon credit tokenization
-
-### Testnet Resources
-| Resource | ID | Link |
-|----------|-----|------|
-| **HCS Topic** | 0.0.7462776 | [HashScan](https://hashscan.io/testnet/topic/0.0.7462776) |
-| **HTS Token** | 0.0.7964264 | [HashScan](https://hashscan.io/testnet/token/0.0.7964264) |
-| **Account** | 0.0.6255927 | [HashScan](https://hashscan.io/testnet/account/0.0.6255927) |
-
----
-
-## 🔬 **Production Test Suite (PS1-PS6)**
-
-Our comprehensive test suite validates all critical system functions:
-
-### PS1: Valid Telemetry Approval
-✅ **Status**: PASSED  
-**Verification**: Normal readings with valid physics approved with 98.5% trust score  
-**Transaction**: [0.0.6255927@1772566213.769819666](https://hashscan.io/testnet/transaction/0.0.6255927@1772566213.769819666)
-
-### PS2: Fraud Detection
-✅ **Status**: PASSED  
-**Verification**: 45,000 kWh inflation detected and flagged with 60.5% trust score  
-**Flags**: PHYSICS_VIOLATION, TEMPORAL_ANOMALY, ENVIRONMENTAL_ANOMALY, LOW_TRUST_SCORE
-
-### PS3: Environmental Violations
-✅ **Status**: PASSED  
-**Verification**: pH 4.5, turbidity 180 NTU violations correctly flagged  
-**Status**: FLAGGED with environmental_check = FAIL
-
-### PS4: Zero-Flow Fraud Protection
-✅ **Status**: PASSED  
-**Verification**: Impossible zero-flow with generation blocked with 400 Bad Request  
-**Behavior**: System correctly rejects physically impossible readings
-
-### PS5: Multi-Plant Isolation
-✅ **Status**: PASSED  
-**Verification**: PLANT-ALPHA and PLANT-BETA have independent transaction IDs  
-**Evidence**: Different Hedera transaction IDs for different plants
-
-### PS6: Replay Protection
-✅ **Status**: PASSED  
-**Verification**: Duplicate timestamp submissions blocked with 409 Conflict  
-**Technology**: Redis-backed deduplication by plant+device+timestamp
-
-**[📋 View Complete Test Documentation](./docs/COMPLETE_AUDIT_GUIDEBOOK.md)**
-
----
-
-## 💡 **Problem Statement**
-
-Small-scale renewable energy projects (1-15 MW hydropower) face critical barriers:
-
-| Challenge | Impact | Current State |
-|-----------|--------|---------------|
-| **Verification Bottleneck** | $15,000-50,000 per project | 3-6 months manual auditing |
-| **Trust Deficit** | 30-40% error/fraud rate | Manual verification unreliable |
-| **Market Exclusion** | 70% of small projects | Cannot afford carbon market entry |
-| **Double-Counting** | Duplicate credits | No immutable ledger |
-
-**Market Size**: 500+ GW of small-scale hydro globally → 2 billion carbon credits/year at $15-30/credit = **$30-60B annual market**
-
----
-
-## ✨ **Solution**
-
-Hedera Hydropower MRV automates the entire MRV workflow using:
-
-### 🤖 AI-Enhanced Verification
-5-layer fraud detection system:
-1. **Physics Validation** (30% weight) — Hydropower formula P = ρ × g × Q × H × η
-2. **Temporal Consistency** (25% weight) — Pattern analysis over time
-3. **Environmental Bounds** (20% weight) — Water quality parameters
-4. **Statistical Anomalies** (15% weight) — Outlier detection
-5. **Device Consistency** (10% weight) — Device behavior patterns
-
-### ⛓️ Blockchain Immutability
-- **Hedera Consensus Service (HCS)** for tamper-proof audit trails
-- **Hedera Token Service (HTS)** for programmable carbon credits
-- **Public ledger** prevents double-counting
-
-### 🎯 UN CDM Compliance
-- **ACM0002 methodology** for small-scale hydro
-- Carbon credit calculation: `ER = BE - PE - LE`
-- Verified: 0.9 MWh × 0.8 tCO2e/MWh = **0.72 tCO2e** per reading
-
----
-
-## 📈 **Key Benefits**
-
-| Metric | Traditional MRV | Our Solution | Improvement |
-|--------|-----------------|--------------|-------------|
-| **Cost** | $50,000 | $500 | **99% reduction** |
-| **Time** | 6 months | 1 day | **180x faster** |
-| **Accuracy** | 60-70% | 95%+ | **35% improvement** |
-| **Double-Counting** | Common | Impossible | **Zero risk** |
-| **Market Access** | 30% of plants | 100% of plants | **3.3x expansion** |
-
----
-
-## 🏗️ **Technical Architecture**
+## Architecture
 
 ```
-┌────────────────────────────────────────────────────────┐
-│               IoT Sensor Layer                         │
-│  (Flow Rate, Head, Generation, Water Quality)          │
-└─────────────────┬──────────────────────────────────────┘
-                  │
-                  ▼
-┌────────────────────────────────────────────────────────┐
-│           Workflow Orchestration                       │
-│  • Telemetry Ingestion  • Retry Logic  • Aggregation  │
-└─────────────────┬──────────────────────────────────────┘
-                  │
-                  ▼
-┌────────────────────────────────────────────────────────┐
-│        AI Verification Engine (EngineV1)               │
-│  ┌────────────────────────────────────────────┐       │
-│  │ 1. Physics Validation     (30% weight)     │       │
-│  │ 2. Temporal Consistency   (25% weight)     │       │
-│  │ 3. Environmental Bounds   (20% weight)     │       │
-│  │ 4. Statistical Anomalies  (15% weight)     │       │
-│  │ 5. Device Consistency     (10% weight)     │       │
-│  └────────────────────────────────────────────┘       │
-│         ↓ Weighted Trust Score (0-1.0)                 │
-│  ┌────────────────────────────────────────────┐       │
-│  │ APPROVED (>0.90) | FLAGGED (0.50-0.90)     │       │
-│  │ REJECTED (<0.50)                            │       │
-│  └────────────────────────────────────────────┘       │
-└─────────────────┬──────────────────────────────────────┘
-                  │
-                  ▼
-┌────────────────────────────────────────────────────────┐
-│              Hedera DLT Layer                          │
-│  ┌────────────┐  ┌──────────┐  ┌────────────┐        │
-│  │ HCS Topic  │  │ Device   │  │ HTS Token  │        │
-│  │ (Audit)    │  │ DID      │  │ (RECs)     │        │
-│  └────────────┘  └──────────┘  └────────────┘        │
-└─────────────────┬──────────────────────────────────────┘
-                  │
-                  ▼
-┌────────────────────────────────────────────────────────┐
-│         Carbon Credit Marketplace                      │
-│  (RECs traded as HTS fungible tokens)                  │
-└────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────┐
+│  IoT Sensors (Flow, Head, Generation, Water Quality)  │
+└────────────────────────┬───────────────────────┘
+                         │
+                         │ REST API (Node.js/Express)
+                         │
+          ┌──────────────┼──────────────┐
+          │              │              │
+   [Input Validation]  [Replay Check]  [5-Layer Verification]
+          │              │              │
+          │              │        Trust Score (0-1.0)
+          │              │              │
+          └──────────────┼──────────────┘
+                         │
+          ┌──────────────┼──────────────┐
+          │              │              │
+    [HCS Audit Log] [ACM0002 Calc] [HREC Minting]
+          │              │              │
+          └──────────────┴──────────────┘
+                         │
+                  Hedera Network
 ```
+
+**Documentation**: [Architecture Details](./docs/ARCHITECTURE.md) | [API Reference](./docs/API.md)
 
 ---
 
-## 🌟 **Hedera Integration**
+## Benefits
 
-### Services Used
-
-| Service | Purpose | Implementation |
-|---------|---------|----------------|
-| **Hedera Consensus Service (HCS)** | Immutable audit log | Topic ID: 0.0.7462776 |
-| **Hedera Token Service (HTS)** | REC token issuance | Token ID: 0.0.7964264 (HREC) |
-| **Hedera Account** | Transaction signing | Account: 0.0.6255927 |
-
-### Why Hedera?
-
-| Feature | Hedera | Other Blockchains |
-|---------|--------|-------------------|
-| **Finality** | 3-5 seconds | 10+ minutes |
-| **Cost** | $0.0001/tx | $5-50/tx |
-| **Energy** | Carbon-negative | Energy-intensive PoW |
-| **Governance** | 39 global enterprises | Centralized/unclear |
-| **Compliance** | Public ledger | Variable |
-
-### Testnet Evidence
-- ✅ **Live Audit Topic**: [HashScan Topic 0.0.7462776](https://hashscan.io/testnet/topic/0.0.7462776)
-- ✅ **Live REC Token**: [HashScan Token 0.0.7964264](https://hashscan.io/testnet/token/0.0.7964264)
-- ✅ **Transaction Explorer**: All submissions viewable on public ledger
-- ✅ **Live Demo Results**: [Complete test verification](./LIVE_DEMO_RESULTS.md)
+| Metric | Traditional | This Solution | Improvement |
+|--------|-------------|---------------|-------------|
+| **Cost** | $50,000 | $500 | 99% reduction |
+| **Time** | 6 months | 1 day | 180x faster |
+| **Accuracy** | 60-70% | 95%+ | 35% improvement |
+| **Transparency** | Opaque | Public ledger | Full auditability |
+| **Double-Counting** | Risk exists | Impossible | Zero risk |
 
 ---
 
-## 🔬 **Innovation Highlights**
+## Documentation
 
-### 1. Multi-Layer AI Verification (Novel)
-**Graduated Scoring System**:
-- Physics validation uses hydropower formula: `P = ρ × g × Q × H × η`
-- 5 confidence tiers: PERFECT (100%) → EXCELLENT (95%) → GOOD (85%) → ACCEPTABLE (70%) → FAIL (<50%)
-- Weighted ensemble model combines 5 independent checks
+### Getting Started
+- [Quick Start Guide](./QUICK_START.md) — 5-minute setup
+- [Development Setup](./README-SETUP.md) — Local environment
+- [API Documentation](./docs/API.md) — REST endpoints
+- [Demo Script](./DEMO_SCRIPT.txt) — Walkthrough
 
-**Proven Performance**:
-- ✅ Normal reading: 98.5% trust score → APPROVED
-- ✅ 10x inflated power: 60.5% trust score → FLAGGED
-- ✅ [View live test results](./LIVE_DEMO_RESULTS.md)
+### Technical
+- [Methodology](./docs/METHODOLOGY.md) — **Canonical verification logic**
+- [Architecture](./docs/ARCHITECTURE.md) — System design
+- [Security](./docs/SECURITY.md) — Security practices
+- [Testing Guide](./TESTING_GUIDE.md) — Running tests
 
-### 2. ACM0002 Compliance (Industry Standard)
-Implements UN CDM methodology ACM0002:
+### Business & Operations
+- [6 MW Pilot Plan](./docs/PILOT_PLAN_6MW_PLANT.md) — 90-day deployment roadmap
+- [Cost Analysis](./docs/COST-ANALYSIS.md) — ROI breakdown
+- [Operator Guide](./docs/OPERATOR_GUIDE.md) — System operation
+- [Verra Integration](./docs/VERRA-GUIDEBOOK.md) — Carbon registry submission
 
-```
-ER = BE - PE - LE
-
-Where:
-  ER = Emission Reductions (tCO2)
-  BE = Baseline Emissions (grid displacement)
-  PE = Project Emissions (construction/ops)
-  LE = Leakage Emissions (indirect effects)
-```
-
-**Live Calculation**: 0.9 MWh × 0.8 tCO2e/MWh = 0.72 tCO2e carbon credits
-
-### 3. Replay Protection (Production-Grade)
-- Redis-backed deduplication by `plantId+deviceId+timestamp`
-- 409 Conflict response for duplicate submissions
-- Graceful fallback if Redis unavailable
-
-### 4. Comprehensive Testing
-- **237 unit tests** with 85% coverage
-- **6 production tests** (PS1-PS6) covering all critical paths
-- **GitHub Actions CI/CD** pipeline
-- **Automated setup script**: `setup-local-production.ps1`
+### Audit & Quality
+- [Complete Audit Guidebook](./docs/COMPLETE_AUDIT_GUIDEBOOK.md) — Full test documentation
+- [Documentation Audit](./docs/DOCUMENTATION-AUDIT-2026-03.md) — March 2026 audit report
+- [Live Demo Results](./LIVE_DEMO_RESULTS.md) — Test evidence
 
 ---
 
-## 🧪 **Testing**
+## Production Roadmap
 
-### Run All Tests
+### Phase 0: Foundation ✅ COMPLETE (March 2026)
+- Core 5-layer MRV engine
+- Hedera HCS/HTS integration
+- 237 automated tests (85% coverage)
+- Production test suite (PS1-PS6)
+- Vercel deployment
+- REST API with authentication
+- Redis replay protection
+- Comprehensive documentation
+
+### Phase 1: Mainnet Launch (Q2 2026)
+- Mainnet deployment on Hedera
+- 5-plant pilot in India
+- Real-time dashboard
+- Grafana monitoring
+- Guardian policy integration
+
+### Phase 2: Market Expansion (Q3 2026)
+- Verra/Gold Standard integration
+- Automated REC marketplace
+- Solar and wind support
+- ML model training on production data
+
+### Phase 3: Enterprise Scale (Q4 2026)
+- White-label SaaS platform
+- API marketplace
+- Multi-tenancy architecture
+- 10,000+ project data training
+
+---
+
+## Next Milestone: 6 MW Shadow Pilot
+
+**Target**: 90-day parallel validation for 6 MW run-of-river plant
+
+**Success Criteria**:
+- <5% delta vs manual MRV reports
+- <0.5% false rejection rate  
+- 99% Hedera transaction success
+- Zero manual intervention for 90 days
+
+**Economics**:
+- Pilot cost: ₹38,000-63,000
+- Manual MRV: ₹1.25 lakh/quarter
+- Savings: 60-70%
+
+[Full Pilot Plan](./docs/PILOT_PLAN_6MW_PLANT.md)
+
+---
+
+## For Developers
+
+### Technology Stack
+- **Backend**: Node.js, Express.js
+- **Blockchain**: Hedera SDK (@hashgraph/sdk)
+- **Database**: Redis (replay protection, rate limiting)
+- **Testing**: Jest (237 tests, 85% coverage)
+- **Deployment**: Vercel (serverless)
+- **CI/CD**: GitHub Actions
+
+### Contributing
+
+See [README-SETUP.md](./README-SETUP.md) for development environment setup.
+
+### Running Tests
 
 ```bash
-# Unit and integration tests
+# All tests
 npm test
 
-# Production test suite (PS1-PS6)
+# Production test suite
 powershell -ExecutionPolicy Bypass -File .\RUN_TESTS.ps1
 
-# Test coverage report
+# Coverage report
 npm run test:coverage
 ```
 
-### Test Results
-
-```
-Test Suites: 12 passed, 12 total
-Tests:       237 passed, 237 total
-Coverage:    85.3% statements | 82.7% branches | 88.9% functions
-Time:        18.456s
-```
-
-### Test Categories
-- **Unit Tests** (150 tests) — Engine validation logic, ACM0002 calculations, trust scores
-- **Integration Tests** (50 tests) — Workflow orchestration, Hedera SDK interactions
-- **Edge Cases** (24 tests) — Invalid telemetry, network failures, boundary conditions
-- **Production Tests** (6 tests) — PS1-PS6 end-to-end verification
-- **API Tests** (7 tests) — REST endpoints, authentication, rate limiting
-
 ---
 
-## 📚 **Documentation**
+## For Plant Operators
 
-### Setup & Usage
-- [📖 Quick Start Guide](./QUICK_START.md) — 5-minute setup
-- [🎬 Demo Script](./DEMO_SCRIPT.txt) — Step-by-step walkthrough
-- [🚀 Live Demo Results](./LIVE_DEMO_RESULTS.md) — Live test results & proof
-- [🔧 Setup Guide](./README-SETUP.md) — Development environment
+Interested in piloting this system? Our [6 MW Plant Integration Guide](./docs/PILOT_PLAN_6MW_PLANT.md) includes:
 
-### Technical
-- [🏗️ Architecture](./docs/ARCHITECTURE.md) — System design
-- [📡 API Reference](./docs/API.md) — REST API specification
-- [🔬 MRV Methodology](./docs/MRV-METHODOLOGY.md) — Verification logic
-- [✅ Verification Engine](./VERIFY.md) — AI Guardian engine
-- [🔒 Security](./docs/SECURITY.md) — Security practices
-
-### Business & Operations
-- [🏭 6 MW Pilot Plan](./docs/PILOT_PLAN_6MW_PLANT.md) — 90-day pilot roadmap
-- [💰 Cost Analysis](./docs/COST-ANALYSIS.md) — ROI analysis
-- [📊 Production Roadmap](./PRODUCTION_READINESS_ROADMAP.md) — Production timeline
-- [👨‍💼 Operator Guide](./docs/OPERATOR_GUIDE.md) — Run the system
-- [🌍 Verra Submission](./docs/VERRA-GUIDEBOOK.md) — Carbon registry integration
-
-### Testing & Quality
-- [🧪 Testing Guide](./TESTING_GUIDE.md) — Run all tests
-- [📋 Complete Audit](./docs/COMPLETE_AUDIT_GUIDEBOOK.md) — Full test documentation
-- [🔍 Self-Audit Report](./README.md#self-audit-summary) — Quality assessment
-
-### Hackathon
-- [🏆 Hackathon Submission](./HACKATHON.md) — AngelHack Apex 2026
-- [🎥 Video Demo Guide](./DEMO_GUIDE.md) — Presentation script
-
----
-
-## 🎯 **Production Roadmap**
-
-### ✅ Phase 0: Foundation (COMPLETE - March 2026)
-- ✅ Core MRV engine with 5-layer verification
-- ✅ Hedera HCS/HTS integration
-- ✅ 237 automated tests (85% coverage)
-- ✅ Production test suite (PS1-PS6)
-- ✅ Vercel deployment
-- ✅ REST API with authentication
-- ✅ Replay protection (Redis)
-- ✅ Comprehensive documentation
-
-### 🚧 Phase 1: Mainnet Launch (Q2 2026)
-- [ ] Mainnet deployment on Hedera
-- [ ] Pilot with 5 hydropower projects in India
-- [ ] Real-time dashboard with live data streams
-- [ ] Grafana monitoring (3-5 days)
-- [ ] Guardian policy integration
-
-### 📅 Phase 2: Market Expansion (Q3 2026)
-- [ ] Integration with carbon registries (Verra, Gold Standard)
-- [ ] Automated REC trading marketplace
-- [ ] Support for solar and wind projects
-- [ ] ML model training on real data
-
-### 🌐 Phase 3: Enterprise Scale (Q4 2026)
-- [ ] White-label SaaS platform for utilities
-- [ ] API marketplace for third-party integrations
-- [ ] AI model retraining with 10,000+ project data
-- [ ] Multi-tenancy architecture
-
----
-
-## 🏭 **Next Milestone: 6 MW Shadow Pilot**
-
-**Target**: 90-day shadow-mode MRV for a 6 MW run-of-river plant in HP/UK
-
-### Success Criteria
-- < 5% delta vs manual MRV reports
-- < 0.5% false rejection rate
-- 99% Hedera transaction success
-- Zero manual intervention for 90 consecutive days
-
-### Economics
-- **Pilot cost**: ₹38,000-63,000
-- **vs Manual MRV**: ₹1.25 lakh per quarter
-- **Savings**: 60-70%
-
-**[📋 Full Pilot Plan](./docs/PILOT_PLAN_6MW_PLANT.md)**
-
----
-
-## 💼 **For Plant Operators**
-
-Want to pilot this system? See our **[6 MW Plant Integration Guide](./docs/PILOT_PLAN_6MW_PLANT.md)** for:
-
-- Hardware options (₹15K-50K depending on quality level)
+- Hardware requirements (₹15K-50K depending on quality)
 - Software setup (open source, ₹0)
 - Shadow-mode validation process
-- Cost breakdown and ROI analysis
+- ROI analysis and cost breakdown
 
-**Contact**: [GitHub Issues](https://github.com/BikramBiswas786/Hedera-hydropower-dMRV-with-5-layer-verification-/issues) for pilot inquiries
+**Contact**: Open an [issue](https://github.com/BikramBiswas786/Hedera-hydropower-dMRV-with-5-layer-verification-/issues) with "Pilot" tag
 
 ---
 
-## 💰 **For Enterprise Buyers / Investors**
+## For Investors & Enterprise
 
-### This is Not Vaporware
+### Production Evidence
 
-✅ **Working code** with comprehensive test coverage  
-✅ **Live blockchain integration** (not mock) — [proof on HashScan](https://hashscan.io/testnet/topic/0.0.7462776)  
-✅ **Deployed production system** on Vercel  
-✅ **Real fraud detection** — [see demo results](./LIVE_DEMO_RESULTS.md)  
-✅ **Clear production roadmap** with effort estimates  
-✅ **Documented pilot economics** with real plant costs  
+- **Working Code**: 237 passing tests, 85% coverage
+- **Live Blockchain**: [Verifiable on HashScan](https://hashscan.io/testnet/topic/0.0.7462776)
+- **Deployed System**: [Production endpoint](https://hydropower-mrv-19feb26.vercel.app/)
+- **Proven Fraud Detection**: [Test results](./LIVE_DEMO_RESULTS.md)
+- **Clear Roadmap**: Documented pilot plan with economics
 
-### What Separates This Project
+### What Makes This Different
 
 | Aspect | This Project | Typical "Blockchain MRV" |
-|--------|--------------|--------------------------|
+|--------|--------------|---------------------------|
 | **Tests** | 237 automated + PS1-PS6 | "Coming soon" |
-| **Blockchain** | Live testnet, verifiable on HashScan | Mock or centralized DB |
-| **Deployment** | Vercel prod + demo endpoints | Local demo only |
-| **Fraud Detection** | Proven (10x inflation caught) | Theoretical |
-| **Documentation** | Pilot plan + roadmap + live results | Whitepaper only |
-| **Carbon Methodology** | ACM0002 compliance implemented | Vague "carbon offsets" |
-
-**Next Steps**: Run one 90-day shadow pilot to prove < 5% accuracy delta, then expand.
+| **Blockchain** | Live testnet, publicly verifiable | Mock or centralized |
+| **Deployment** | Production endpoint + API | Local demo only |
+| **Fraud Detection** | Proven (10x inflation caught) | Theoretical claims |
+| **Documentation** | Full pilot plan + economics | Whitepaper only |
+| **Methodology** | ACM0002 implemented | Vague carbon claims |
 
 ---
 
-## 🏆 **Hackathon Compliance**
+## License
 
-### AngelHack Apex 2026 Requirements
-
-✅ **Track**: Sustainability  
-✅ **Hedera Integration**: HCS, HTS, Testnet Account  
-✅ **Code Repository**: [GitHub](https://github.com/BikramBiswas786/Hedera-hydropower-dMRV-with-5-layer-verification-)  
-✅ **Live Demo**: [Vercel Dashboard](https://hydropower-mrv-19feb26.vercel.app/)  
-✅ **Live Proof**: [Real transactions on HashScan](./LIVE_DEMO_RESULTS.md)  
-✅ **Documentation**: Comprehensive README + 40+ supplementary docs  
-✅ **Tests**: 237 passing + PS1-PS6 production tests  
-✅ **License**: MIT  
-
-### Judging Criteria Alignment
-
-| Criterion | Weight | Our Score | Evidence |
-|-----------|--------|-----------|----------|
-| **Innovation** | 25% | 9/10 | Novel 5-layer AI + ACM0002 + fraud proven |
-| **Feasibility** | 20% | 10/10 | Working & deployed with live Hedera |
-| **Execution** | 15% | 10/10 | 237 tests + live demo + production |
-| **Hedera Integration** | 15% | 10/10 | HCS, HTS, verifiable on HashScan |
-| **Success Potential** | 20% | 9/10 | $30-60B market, ready for pilot |
-| **Validation** | 15% | 9/10 | Market research + live fraud detection |
-| **Pitch Quality** | 10% | 10/10 | Clear value prop + working demo + docs |
-
-**Estimated Total**: 94/100 (Excellent)
+MIT License - see [LICENSE](./LICENSE)
 
 ---
 
-## ✅ **Self-Audit Summary**
+## Legal Disclaimer
 
-This project underwent a comprehensive self-audit on **March 3, 2026** to identify and resolve production-readiness issues before submission.
+**Testnet Environment**: This system currently operates on Hedera testnet. Carbon credits issued are for demonstration and testing purposes only. Production deployment requires:
 
-### Self-Audit Process
-1. **Identified Issues**: Systematic review of codebase, test coverage, and API behavior
-2. **Prioritized Fixes**: Categorized as P1 (critical), P2 (important), P3 (nice-to-have)
-3. **Implemented Solutions**: Replay protection (Redis), flags[] population (buildFlags helper)
-4. **Verified Fixes**: Live API testing + 237 unit tests + PS1-PS6 production tests
+1. Mainnet Hedera account registration
+2. Verra VCS or Gold Standard certification
+3. Project-specific emission factor validation
+4. Legal compliance with local carbon market regulations
+5. Third-party audit of methodology implementation
 
-### Resolutions
-
-✅ **P1: Replay Protection** (RESOLVED)
-- Issue: No deduplication mechanism for duplicate timestamp submissions
-- Fix: Redis-backed replay protection in `src/middleware/replayProtection.js`
-- Evidence: PS6 test shows duplicate timestamp blocked with 409 Conflict
-
-✅ **P2: flags[] Array** (RESOLVED)
-- Issue: `verification_details.flags` array always empty
-- Fix: Created `buildFlags()` helper in `src/api/v1/telemetry.js`
-- Evidence: PS2 test shows 4+ specific flags on fraud detection
-
-✅ **P3: Redis Infrastructure** (RESOLVED)
-- Issue: Redis not running for rate limiting and replay protection
-- Fix: Deployed Redis 7.2.9 via WSL, configured REDIS_URL
-- Evidence: PS6 replay protection working, rate limiter operational
-
-### Honest Assessment
-
-**Strengths**:
-- Comprehensive 5-layer verification with proven fraud detection
-- Immutable Hedera HCS audit trail with public verification
-- Automatic carbon credit minting per ACM0002
-- Robust error handling and graceful degradation
-- 237 unit tests + 6 production tests with excellent coverage
-
-**Known Limitations**:
-- Jest worker cleanup warning (cosmetic, doesn't affect functionality)
-- Redis required for replay protection (falls back gracefully if unavailable)
-- Testnet only (requires mainnet deployment for production)
-- 93% feature completion (forecasting and active learning planned but not critical)
-
-**Production Readiness**: ✅ **Ready for deployment and evaluation**
+No claims are made about legal enforceability of testnet-issued credits.
 
 ---
 
-## 🤝 **Contributing**
+## Contact
 
-See [README-SETUP.md](./README-SETUP.md) for development setup and guidelines.
-
----
-
-## 📄 **License**
-
-MIT License - see [LICENSE](./LICENSE) file for details.
+**GitHub**: [@BikramBiswas786](https://github.com/BikramBiswas786)  
+**Issues**: [GitHub Issues](https://github.com/BikramBiswas786/Hedera-hydropower-dMRV-with-5-layer-verification-/issues)  
+**Documentation**: [Complete Docs](./docs/README.md)
 
 ---
 
-## 👨‍💻 **Author**
+## Acknowledgments
 
-**Bikram Biswas**  
-GitHub: [@BikramBiswas786](https://github.com/BikramBiswas786)  
-Project: Hedera Hydropower MRV System  
-Hackathon: AngelHack Apex 2026 • Sustainability Track  
-
----
-
-## 🙏 **Acknowledgments**
-
-- **Hedera Team** for excellent SDK and documentation
-- **AngelHack/StackUp** for organizing Apex 2026
+- **Hedera** for excellent SDK and documentation
 - **UN Framework Convention on Climate Change** for ACM0002 methodology
 - **Open Source Community** for dependencies (Hashgraph SDK, Jest, Express)
 
 ---
 
-## 📞 **Contact & Support**
-
-- **Issues**: [GitHub Issues](https://github.com/BikramBiswas786/Hedera-hydropower-dMRV-with-5-layer-verification-/issues)
-- **Documentation**: [Complete Docs](./docs/README.md)
-- **Pilot Inquiries**: Open an issue with "Pilot" tag
-
----
-
 <p align="center">
-  <strong>Built with 💚 for a sustainable future</strong>
-</p>
-
-<p align="center">
+  <strong>Built for a sustainable future</strong><br>
   <a href="./QUICK_START.md">Quick Start</a> •
   <a href="./docs/API.md">API Docs</a> •
   <a href="./LIVE_DEMO_RESULTS.md">Live Results</a> •
