@@ -1,3 +1,11 @@
+> **⚠️ HISTORICAL REFERENCE ONLY**  
+> This document contains legacy trust score weights (40/25/20/15) that differ from the current production implementation.  
+> **Canonical source**: [METHODOLOGY.md](./METHODOLOGY.md) defines authoritative weights (30/25/20/15/10) for 5-layer verification  
+> **Status**: Reference documentation for ACM0002 alignment overview  
+> **Last valid**: Pre-March 2026
+
+---
+
 # MRV Methodology — ACM0002 Alignment
 
 ## Applicable Methodology
@@ -50,6 +58,8 @@ RECs_issued = floor(EG_approved / 1000)  (1 REC per MWh)
 Only APPROVED readings contribute to REC issuance.
 
 ## Trust Score Weights
+
+**Note**: These weights are historical. See [METHODOLOGY.md](./METHODOLOGY.md) for current production values.
 
 | Check                | Weight | Basis                                        |
 |----------------------|--------|----------------------------------------------|
