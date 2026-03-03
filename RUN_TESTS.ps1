@@ -1,10 +1,10 @@
 #!/usr/bin/env pwsh
-# HEDERA HYDROPOWER dMRV - COMPLETE TEST SUITE (PS1–PS6)
-# Version: 2.1 (PS4 fixed)
+# HEDERA HYDROPOWER dMRV - COMPLETE TEST SUITE (PS1-PS6)
+# Version: 2.2 (Windows PowerShell compatible)
 # Date: March 4, 2026
 
 Write-Host "`n╔════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║  HEDERA HYDROPOWER dMRV - COMPLETE TEST SUITE (PS1–PS6)║" -ForegroundColor Cyan
+Write-Host "║  HEDERA HYDROPOWER dMRV - COMPLETE TEST SUITE (PS1-PS6)║" -ForegroundColor Cyan
 Write-Host "╚════════════════════════════════════════════════════════╝`n" -ForegroundColor Cyan
 
 # API Configuration
@@ -30,7 +30,7 @@ function Get-EpochMs {
 }
 
 #──────────────────────────────────────────────────────────
-# PS1 – Valid APPROVED Telemetry
+# PS1 - Valid APPROVED Telemetry
 #──────────────────────────────────────────────────────────
 Write-Host "[PS1] Valid APPROVED Telemetry" -ForegroundColor Green
 
@@ -62,20 +62,20 @@ try {
     Write-Host "  HashScan:            $($resp.hedera.hashscan_url)`n" -ForegroundColor Cyan
 
     if ($resp.status -eq "APPROVED" -and $resp.trust_score -gt 0.9) {
-        Write-Host "  ✅ PS1 PASSED`n" -ForegroundColor Green
+        Write-Host "  [PASS] PS1 PASSED`n" -ForegroundColor Green
         Add-TestResult "PS1" "PASSED"
     } else {
-        Write-Host "  ❌ PS1 FAILED`n" -ForegroundColor Red
+        Write-Host "  [FAIL] PS1 FAILED`n" -ForegroundColor Red
         Add-TestResult "PS1" "FAILED"
     }
 }
 catch {
-    Write-Host "  ❌ PS1 ERROR: $($_.Exception.Message)`n" -ForegroundColor Red
+    Write-Host "  [ERROR] PS1 ERROR: $($_.Exception.Message)`n" -ForegroundColor Red
     Add-TestResult "PS1" "ERROR"
 }
 
 #──────────────────────────────────────────────────────────
-# PS2 – Fraud Detection (Inflated Power 45000 kWh)
+# PS2 - Fraud Detection (Inflated Power 45000 kWh)
 #──────────────────────────────────────────────────────────
 Write-Host "[PS2] Fraud Detection - Inflated Power (45000 kWh)" -ForegroundColor Yellow
 
@@ -101,20 +101,20 @@ try {
     Write-Host "  Transaction:   $($fraudResp.hedera.transaction_id)`n"
 
     if ($fraudResp.status -eq "FLAGGED" -and $fraudResp.trust_score -lt 0.7) {
-        Write-Host "  ✅ PS2 PASSED - Fraud detected`n" -ForegroundColor Green
+        Write-Host "  [PASS] PS2 PASSED - Fraud detected`n" -ForegroundColor Green
         Add-TestResult "PS2" "PASSED"
     } else {
-        Write-Host "  ❌ PS2 FAILED - Fraud not detected`n" -ForegroundColor Red
+        Write-Host "  [FAIL] PS2 FAILED - Fraud not detected`n" -ForegroundColor Red
         Add-TestResult "PS2" "FAILED"
     }
 }
 catch {
-    Write-Host "  ❌ PS2 ERROR: $($_.Exception.Message)`n" -ForegroundColor Red
+    Write-Host "  [ERROR] PS2 ERROR: $($_.Exception.Message)`n" -ForegroundColor Red
     Add-TestResult "PS2" "ERROR"
 }
 
 #──────────────────────────────────────────────────────────
-# PS3 – Environmental Violation Detection
+# PS3 - Environmental Violation Detection
 #──────────────────────────────────────────────────────────
 Write-Host "[PS3] Environmental Violation Detection" -ForegroundColor Magenta
 
@@ -142,20 +142,20 @@ try {
     Write-Host "  Flags:               $($envResp.verification_details.flags -join ', ')`n"
 
     if ($envResp.status -eq "FLAGGED" -and $envResp.verification_details.environmental_check -eq "FAIL") {
-        Write-Host "  ✅ PS3 PASSED - Environmental violation detected`n" -ForegroundColor Green
+        Write-Host "  [PASS] PS3 PASSED - Environmental violation detected`n" -ForegroundColor Green
         Add-TestResult "PS3" "PASSED"
     } else {
-        Write-Host "  ❌ PS3 FAILED - Environmental violation not detected`n" -ForegroundColor Red
+        Write-Host "  [FAIL] PS3 FAILED - Environmental violation not detected`n" -ForegroundColor Red
         Add-TestResult "PS3" "FAILED"
     }
 }
 catch {
-    Write-Host "  ❌ PS3 ERROR: $($_.Exception.Message)`n" -ForegroundColor Red
+    Write-Host "  [ERROR] PS3 ERROR: $($_.Exception.Message)`n" -ForegroundColor Red
     Add-TestResult "PS3" "ERROR"
 }
 
 #──────────────────────────────────────────────────────────
-# PS4 – Zero-Flow Fraud (should be blocked)
+# PS4 - Zero-Flow Fraud (should be blocked)
 #──────────────────────────────────────────────────────────
 Write-Host "[PS4] Zero-Flow Fraud (generatedKwh > 0, flowRate = 0)" -ForegroundColor Red
 
@@ -184,10 +184,10 @@ try {
     Write-Host "  Flags:         $($zeroResp.verification_details.flags -join ', ')`n"
 
     if ($zeroResp.status -eq "REJECTED" -or $zeroResp.trust_score -lt 0.5) {
-        Write-Host "  ✅ PS4 PASSED - zero-flow fraud rejected/low trust`n" -ForegroundColor Green
+        Write-Host "  [PASS] PS4 PASSED - zero-flow fraud rejected/low trust`n" -ForegroundColor Green
         Add-TestResult "PS4" "PASSED"
     } else {
-        Write-Host "  ❌ PS4 FAILED - zero-flow fraud not rejected`n" -ForegroundColor Red
+        Write-Host "  [FAIL] PS4 FAILED - zero-flow fraud not rejected`n" -ForegroundColor Red
         Add-TestResult "PS4" "FAILED"
     }
 }
@@ -197,16 +197,16 @@ catch {
     Write-Host "  API error on zero-flow payload: $msg`n" -ForegroundColor Yellow
 
     if ($msg -like "*(400)*") {
-        Write-Host "  ✅ PS4 PASSED - zero-flow fraud blocked with 400 Bad Request`n" -ForegroundColor Green
+        Write-Host "  [PASS] PS4 PASSED - zero-flow fraud blocked with 400 Bad Request`n" -ForegroundColor Green
         Add-TestResult "PS4" "PASSED"
     } else {
-        Write-Host "  ❌ PS4 ERROR - unexpected error on zero-flow test`n" -ForegroundColor Red
+        Write-Host "  [ERROR] PS4 ERROR - unexpected error on zero-flow test`n" -ForegroundColor Red
         Add-TestResult "PS4" "ERROR"
     }
 }
 
 #──────────────────────────────────────────────────────────
-# PS5 – Multi-Plant Isolation (PLANT-ALPHA vs PLANT-BETA)
+# PS5 - Multi-Plant Isolation (PLANT-ALPHA vs PLANT-BETA)
 #──────────────────────────────────────────────────────────
 Write-Host "[PS5] Multi-Plant Isolation (PLANT-ALPHA vs PLANT-BETA)" -ForegroundColor Cyan
 
@@ -248,20 +248,20 @@ try {
     Write-Host "  PLANT-BETA  TX: $($betaResp.hedera.transaction_id)`n"
 
     if ($alphaResp.hedera.transaction_id -ne $betaResp.hedera.transaction_id) {
-        Write-Host "  ✅ PS5 PASSED - different plants → different TXs`n" -ForegroundColor Green
+        Write-Host "  [PASS] PS5 PASSED - different plants -> different TXs`n" -ForegroundColor Green
         Add-TestResult "PS5" "PASSED"
     } else {
-        Write-Host "  ❌ PS5 FAILED - TX IDs should differ`n" -ForegroundColor Red
+        Write-Host "  [FAIL] PS5 FAILED - TX IDs should differ`n" -ForegroundColor Red
         Add-TestResult "PS5" "FAILED"
     }
 }
 catch {
-    Write-Host "  ❌ PS5 ERROR: $($_.Exception.Message)`n" -ForegroundColor Red
+    Write-Host "  [ERROR] PS5 ERROR: $($_.Exception.Message)`n" -ForegroundColor Red
     Add-TestResult "PS5" "ERROR"
 }
 
 #──────────────────────────────────────────────────────────
-# PS6 – Replay Protection (duplicate timestamp)
+# PS6 - Replay Protection (duplicate timestamp)
 #──────────────────────────────────────────────────────────
 Write-Host "[PS6] Replay Protection (Duplicate Timestamp)" -ForegroundColor Yellow
 
@@ -287,7 +287,7 @@ try {
     Write-Host "  First submit status: $($first.status)"
 }
 catch {
-    Write-Host "  ❌ PS6 ERROR on first submit: $($_.Exception.Message)`n" -ForegroundColor Red
+    Write-Host "  [ERROR] PS6 ERROR on first submit: $($_.Exception.Message)`n" -ForegroundColor Red
     Add-TestResult "PS6" "ERROR"
     $skipPS6Second = $true
 }
@@ -296,13 +296,13 @@ if (-not $skipPS6Second) {
     try {
         $second = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $replayBody -ErrorAction Stop
         Write-Host "  Second submit unexpectedly succeeded: $($second.status)" -ForegroundColor Red
-        Write-Host "  ❌ PS6 FAILED - replay not blocked`n" -ForegroundColor Red
+        Write-Host "  [FAIL] PS6 FAILED - replay not blocked`n" -ForegroundColor Red
         Add-TestResult "PS6" "FAILED"
     }
     catch {
         Write-Host "  Second submit blocked as expected:" -ForegroundColor Green
         Write-Host "    $($_.Exception.Message)" -ForegroundColor Green
-        Write-Host "  ✅ PS6 PASSED - replay protection working`n" -ForegroundColor Green
+        Write-Host "  [PASS] PS6 PASSED - replay protection working`n" -ForegroundColor Green
         Add-TestResult "PS6" "PASSED"
     }
 }
@@ -330,9 +330,9 @@ foreach ($r in $testResults) {
 Write-Host "`nSummary: $passedCount/$totalTests tests passed`n" -ForegroundColor Cyan
 
 if ($passedCount -eq $totalTests) {
-    Write-Host "🎊 ALL TESTS PASSED - PRODUCTION READY! 🎊`n" -ForegroundColor Green
+    Write-Host "*** ALL TESTS PASSED - PRODUCTION READY! ***`n" -ForegroundColor Green
     exit 0
 } else {
-    Write-Host "⚠️ SOME TESTS FAILED - REVIEW RESULTS ABOVE ⚠️`n" -ForegroundColor Yellow
+    Write-Host "*** SOME TESTS FAILED - REVIEW RESULTS ABOVE ***`n" -ForegroundColor Yellow
     exit 1
 }
