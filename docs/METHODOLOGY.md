@@ -219,3 +219,31 @@ If Redis is unavailable at startup, the middleware logs a warning and operates i
 | Statistical layer needs 30 readings for baseline | First ~30 readings per device get a default score, not a computed one | No change planned; this is standard practice |
 | No real-time sensor health check | A malfunctioning sensor can submit plausible-looking but wrong data | Device DID attestation + hardware security module (Phase 3) |
 | Testnet only | No mainnet deployment yet | Mainnet launch Q2 2026 |
+
+
+
+### Summary of Implementation Status
+
+| Feature | Status in Codebase | Status in Documentation |
+| :--- | :--- | :--- |
+| **Device DID Identity** | **Implemented** (Basic) | Listed as Phase 0/1 |
+| **Device DID Attestation** | **Partial/Mocked** | Listed as Phase 3 (Planned) |
+| **Hardware Security Module (HSM)** | **Not Implemented** | Listed as Phase 3 (Planned) |
+
+### Detailed Analysis
+
+#### 1. Device DID (Identity vs. Attestation)
+While you correctly noticed that there is code related to DIDs, there is a distinction between **DID Identity** (which is present) and **DID Attestation** (which is planned):
+*   **What is there:** The script `scripts/01_deploy_did_complete.js` [1] and the `Workflow.deployDeviceDID` method in `src/workflow.js` [2] can generate a DID document and publish it to the Hedera Consensus Service (HCS). This establishes a **static identity** for the plant.
+*   **What is missing:** The "Attestation" mentioned in Phase 3 refers to using that DID to cryptographically sign every sensor reading at the hardware level to prove the sensor's health and authenticity in real-time. Currently, the telemetry is submitted via a standard REST API without hardware-level DID signatures.
+
+#### 2. Hardware Security Module (HSM)
+There is **no implementation** of HSM or KMS (Key Management Service) in the current repository. 
+*   The codebase currently relies on **environment variables** (`.env`) to store Hedera private keys [3].
+*   The documentation explicitly mentions HSMs only as a **recommendation for production** or a **remediation step** for future security hardening [4] [5]. For example, `SECURITY.md` states: *"For production, consider using a Hardware Security Module (HSM)"* [5].
+
+### Conclusion
+
+
+The project currently has the **foundational identity layer** (creating the DID), but it lacks the **hardware-level security** (HSM) and the **real-time cryptographic proof of sensor health** (Attestation) that would define the completed Phase 3 feature.
+
