@@ -222,7 +222,7 @@ If Redis is unavailable at startup, the middleware logs a warning and operates i
 
 
 
-### Summary of Implementation Status
+### Known Limitation Vs Implementation Status
 
 | Feature | Status in Codebase | Status in Documentation |
 | :--- | :--- | :--- |
