@@ -233,7 +233,7 @@ If Redis is unavailable at startup, the middleware logs a warning and operates i
 ### Detailed Analysis
 
 #### 1. Device DID (Identity vs. Attestation)
-While you correctly noticed that there is code related to DIDs, there is a distinction between **DID Identity** (which is present) and **DID Attestation** (which is planned):
+While you can noticed that there is code related to DIDs, there is a distinction between **DID Identity** (which is present) and **DID Attestation** (which is planned):
 *   **What is there:** The script `scripts/01_deploy_did_complete.js` [1] and the `Workflow.deployDeviceDID` method in `src/workflow.js` [2] can generate a DID document and publish it to the Hedera Consensus Service (HCS). This establishes a **static identity** for the plant.
 *   **What is missing:** The "Attestation" mentioned in Phase 3 refers to using that DID to cryptographically sign every sensor reading at the hardware level to prove the sensor's health and authenticity in real-time. Currently, the telemetry is submitted via a standard REST API without hardware-level DID signatures.
 
