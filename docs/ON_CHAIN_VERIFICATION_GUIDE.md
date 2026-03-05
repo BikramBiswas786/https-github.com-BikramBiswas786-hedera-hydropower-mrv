@@ -435,23 +435,7 @@ Full URL: https://hashscan.io/testnet/transaction/0.0.6255927@1772736655.8602597
 
 ---
 
-## 10. FINAL VERIFICATION STATEMENT
 
-### For Audit Reports
-
-After completing this guide, you can state:
-
-> "I independently verified the Hedera Hydropower dMRV system on Hedera testnet:
-> 
-> - HCS Topic 0.0.7462776 contains [X] attestations with complete MRV data
-> - APPROVED readings have trust scores ≥0.9 and carbon credits calculated per ACM0002
-> - FLAGGED readings have trust scores <0.7 with documented fraud reasons
-> - HREC token 0.0.7964264 has [Y] mints correlating to APPROVED attestations
-> - HCS transaction fees verified at $0.0001 per message on HashScan
-> - HTS mint fees verified at $0.001-0.01 per transaction on HashScan
-> - All claims are verifiable using public blockchain explorer"
-
----
 
 ## KEY LINKS
 
