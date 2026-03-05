@@ -1,13 +1,13 @@
 #!/usr/bin/env pwsh
 # HEDERA HYDROPOWER dMRV - COMPLETE TEST SUITE (PS1-PS6)
-# Version: 2.4 (Hashtable bug fixed, improved formatting)
+# Version: 2.5 (ASCII-safe characters for Windows PowerShell)
 # Date: March 6, 2026
 
-Write-Host "`n" -NoNewline
-Write-Host "╔════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║  HEDERA HYDROPOWER dMRV - COMPLETE TEST SUITE (PS1-PS6)║" -ForegroundColor Cyan
-Write-Host "╚════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
-Write-Host ""
+Write-Host "
+========================================================" -ForegroundColor Cyan
+Write-Host "  HEDERA HYDROPOWER dMRV - COMPLETE TEST SUITE" -ForegroundColor Cyan
+Write-Host "========================================================
+" -ForegroundColor Cyan
 
 # API Configuration
 $headers = @{
@@ -35,7 +35,7 @@ function Get-EpochMs {
 }
 
 # ========================================================
-# PS1 - Valid APPROVED Telemetry
+# TEST 1 - Valid APPROVED Telemetry
 # ========================================================
 Write-Host "[TEST 1] Valid APPROVED Telemetry" -ForegroundColor Green
 
@@ -84,9 +84,9 @@ catch {
 }
 
 # ========================================================
-# PS2 - Fraud Detection (Inflated Power 45000 kWh)
+# TEST 2 - Fraud Detection
 # ========================================================
-Write-Host "[TEST 2] Fraud Detection - Inflated Power (45000 kWh)" -ForegroundColor Yellow
+Write-Host "[TEST 2] Fraud Detection - Inflated Power" -ForegroundColor Yellow
 
 $fraudBody = @{
     plant_id  = "PLANT-ALPHA"
@@ -127,7 +127,7 @@ catch {
 }
 
 # ========================================================
-# PS3 - Environmental Violation Detection
+# TEST 3 - Environmental Violation Detection
 # ========================================================
 Write-Host "[TEST 3] Environmental Violation Detection" -ForegroundColor Magenta
 
@@ -172,7 +172,7 @@ catch {
 }
 
 # ========================================================
-# PS4 - Zero-Flow Fraud
+# TEST 4 - Zero-Flow Fraud
 # ========================================================
 Write-Host "[TEST 4] Zero-Flow Fraud Detection" -ForegroundColor Red
 
@@ -227,7 +227,7 @@ catch {
 }
 
 # ========================================================
-# PS5 - Multi-Plant Isolation
+# TEST 5 - Multi-Plant Isolation
 # ========================================================
 Write-Host "[TEST 5] Multi-Plant Isolation" -ForegroundColor Cyan
 
@@ -286,7 +286,7 @@ catch {
 }
 
 # ========================================================
-# PS6 - Replay Protection
+# TEST 6 - Replay Protection
 # ========================================================
 Write-Host "[TEST 6] Replay Attack Prevention" -ForegroundColor Yellow
 
@@ -343,9 +343,9 @@ if (-not $skipPS6Second) {
 # SUMMARY
 # ========================================================
 Write-Host ""
-Write-Host "╔════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║              TESTING COMPLETE                        ║" -ForegroundColor Cyan
-Write-Host "╚════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+Write-Host "              TESTING COMPLETE                        " -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
 
 $passedCount = ($testResults | Where-Object { $_.Result -eq "PASSED" }).Count
@@ -353,7 +353,7 @@ $totalTests  = $testResults.Count
 
 Write-Host "Test Results:" -ForegroundColor White
 foreach ($r in $testResults) {
-    $icon = if ($r.Result -eq "PASSED") { "✓" } elseif ($r.Result -eq "FAILED") { "✗" } else { "⚠" }
+    $icon = if ($r.Result -eq "PASSED") { "[OK]" } elseif ($r.Result -eq "FAILED") { "[!!]" } else { "[??]" }
     $color = switch ($r.Result) {
         "PASSED" { "Green" }
         "FAILED" { "Red" }
@@ -367,15 +367,15 @@ Write-Host "Summary: $passedCount/$totalTests tests passed" -ForegroundColor Cya
 Write-Host ""
 
 if ($passedCount -eq $totalTests -and $totalTests -gt 0) {
-    Write-Host "✓ ALL TESTS PASSED - PRODUCTION READY!" -ForegroundColor Green
+    Write-Host "[OK] ALL TESTS PASSED - PRODUCTION READY!" -ForegroundColor Green
     Write-Host ""
     exit 0
 } elseif ($totalTests -eq 0) {
-    Write-Host "⚠ NO TESTS RUN - CHECK API SERVER" -ForegroundColor Yellow
+    Write-Host "[??] NO TESTS RUN - CHECK API SERVER" -ForegroundColor Yellow
     Write-Host ""
     exit 1
 } else {
-    Write-Host "✗ SOME TESTS FAILED - REVIEW RESULTS ABOVE" -ForegroundColor Yellow
+    Write-Host "[!!] SOME TESTS FAILED - REVIEW RESULTS ABOVE" -ForegroundColor Yellow
     Write-Host ""
     exit 1
 }
