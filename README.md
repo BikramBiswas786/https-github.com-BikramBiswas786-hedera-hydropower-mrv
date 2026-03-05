@@ -147,6 +147,47 @@ Where: ER = Emission Reductions, BE = Baseline Emissions,
 
 ---
 
+## Verification & On-Chain Evidence (Detailed)
+
+### What is written on-chain per reading
+For each processed telemetry packet, the system persists a verification attestation to Hedera HCS (when Hedera credentials/topic are configured). The attestation includes:
+- Device and timestamp identity fields
+- Verification status (`APPROVED`, `FLAGGED`, `REJECTED`)
+- Trust score and per-layer checks
+- ACM0002 calculation outputs (`BE`, `PE`, `LE`, `ER`)
+- Transaction metadata for traceability
+
+This creates an immutable sequence that auditors can independently cross-check against API logs and exported reports.
+
+### Decision behavior and credit flow
+- **APPROVED (>0.90)**: Recorded on HCS and eligible for HREC minting flow.
+- **FLAGGED (0.50-0.90)**: Recorded on HCS; issuance withheld pending review policy.
+- **REJECTED (<0.50)**: Recorded on HCS; no issuance.
+
+All outcomes are retained in the audit trail so rejected/flagged attempts are not hidden.
+
+### Anti-fraud controls implemented in pipeline
+- Input validation with physical plausibility checks
+- Replay protection (`plant_id + device_id + timestamp` uniqueness)
+- Multi-layer trust scoring (physics, temporal, environmental, anomaly, consistency)
+- Statistical anomaly detection and deterministic policy thresholds
+
+### Audit replacement readiness (unbiased criteria)
+The platform is designed to reduce manual audit burden significantly, but full replacement of manual audit should only be claimed after all of the following are met:
+1. 90-day shadow-mode results satisfy acceptance gates (<5% delta, low false rejection, stable operations)
+2. Mainnet deployment with production key management and operational monitoring
+3. Registry/compliance acceptance (e.g., Verra/Gold Standard process requirements)
+4. Independent third-party assurance for methodology and control environment
+
+### Practical reviewer checklist
+1. Submit known-good and known-bad telemetry payloads.
+2. Confirm API decisions align with trust thresholds.
+3. Verify corresponding HCS records on HashScan for each submission.
+4. Verify issuance only occurs for approved events.
+5. Reconcile monitoring report totals with on-chain entries.
+
+---
+
 ## Quick Start
 
 ### Prerequisites
