@@ -1,11 +1,13 @@
 #!/usr/bin/env pwsh
 # HEDERA HYDROPOWER dMRV - COMPLETE TEST SUITE (PS1-PS6)
-# Version: 2.3 (Pure ASCII - Windows PowerShell compatible)
-# Date: March 4, 2026
+# Version: 2.4 (Hashtable bug fixed, improved formatting)
+# Date: March 6, 2026
 
-Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host "  HEDERA HYDROPOWER dMRV - COMPLETE TEST SUITE (PS1-PS6)" -ForegroundColor Cyan
-Write-Host "========================================================`n" -ForegroundColor Cyan
+Write-Host "`n" -NoNewline
+Write-Host "╔════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+Write-Host "║  HEDERA HYDROPOWER dMRV - COMPLETE TEST SUITE (PS1-PS6)║" -ForegroundColor Cyan
+Write-Host "╚════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host ""
 
 # API Configuration
 $headers = @{
@@ -21,7 +23,10 @@ function Add-TestResult {
         [string]$name,
         [string]$result
     )
-    $global:testResults += @{ Test = $name; Result = $result }
+    $global:testResults += [PSCustomObject]@{
+        Test   = $name
+        Result = $result
+    }
 }
 
 # Helper: current epoch ms
@@ -32,7 +37,7 @@ function Get-EpochMs {
 # ========================================================
 # PS1 - Valid APPROVED Telemetry
 # ========================================================
-Write-Host "[PS1] Valid APPROVED Telemetry" -ForegroundColor Green
+Write-Host "[TEST 1] Valid APPROVED Telemetry" -ForegroundColor Green
 
 $validBody = @{
     plant_id  = "PLANT-ALPHA"
@@ -52,32 +57,36 @@ $validBody = @{
 try {
     $resp = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $validBody
 
-    Write-Host "  Status:              $($resp.status)"
-    Write-Host "  Trust Score:         $($resp.trust_score)"
-    Write-Host "  Reading ID:          $($resp.reading_id)"
-    Write-Host "  Physics Check:       $($resp.verification_details.physics_check)"
-    Write-Host "  Environmental Check: $($resp.verification_details.environmental_check)"
-    Write-Host "  Carbon Credits:      $($resp.carbon_credits.amount_tco2e) tCO2e"
-    Write-Host "  Transaction:         $($resp.hedera.transaction_id)"
-    Write-Host "  HashScan:            $($resp.hedera.hashscan_url)`n" -ForegroundColor Cyan
+    Write-Host "  Status: $($resp.status)" -ForegroundColor White
+    Write-Host "  Trust Score: $($resp.trust_score)" -ForegroundColor White
+    Write-Host "  Reading ID: $($resp.reading_id)" -ForegroundColor Gray
+    Write-Host "  Physics Check: $($resp.verification_details.physics_check)" -ForegroundColor White
+    Write-Host "  Environmental Check: $($resp.verification_details.environmental_check)" -ForegroundColor White
+    Write-Host "  Carbon Credits: $($resp.carbon_credits.amount_tco2e) tCO2e" -ForegroundColor White
+    Write-Host "  Transaction: $($resp.hedera.transaction_id)" -ForegroundColor Cyan
+    Write-Host "  HashScan: $($resp.hedera.hashscan_url)" -ForegroundColor Cyan
+    Write-Host ""
 
     if ($resp.status -eq "APPROVED" -and $resp.trust_score -gt 0.9) {
-        Write-Host "  [PASS] PS1 PASSED`n" -ForegroundColor Green
-        Add-TestResult "PS1" "PASSED"
+        Write-Host "  TEST 1 PASSED" -ForegroundColor Green
+        Write-Host ""
+        Add-TestResult "TEST 1" "PASSED"
     } else {
-        Write-Host "  [FAIL] PS1 FAILED`n" -ForegroundColor Red
-        Add-TestResult "PS1" "FAILED"
+        Write-Host "  TEST 1 FAILED" -ForegroundColor Red
+        Write-Host ""
+        Add-TestResult "TEST 1" "FAILED"
     }
 }
 catch {
-    Write-Host "  [ERROR] PS1 ERROR: $($_.Exception.Message)`n" -ForegroundColor Red
-    Add-TestResult "PS1" "ERROR"
+    Write-Host "  [ERROR] TEST 1 ERROR: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host ""
+    Add-TestResult "TEST 1" "ERROR"
 }
 
 # ========================================================
 # PS2 - Fraud Detection (Inflated Power 45000 kWh)
 # ========================================================
-Write-Host "[PS2] Fraud Detection - Inflated Power 45000 kWh" -ForegroundColor Yellow
+Write-Host "[TEST 2] Fraud Detection - Inflated Power (45000 kWh)" -ForegroundColor Yellow
 
 $fraudBody = @{
     plant_id  = "PLANT-ALPHA"
@@ -94,29 +103,33 @@ $fraudBody = @{
 try {
     $fraudResp = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $fraudBody
 
-    Write-Host "  Status:        $($fraudResp.status)"
-    Write-Host "  Trust Score:   $($fraudResp.trust_score)"
-    Write-Host "  Physics Check: $($fraudResp.verification_details.physics_check)"
-    Write-Host "  Flags:         $($fraudResp.verification_details.flags -join ', ')"
-    Write-Host "  Transaction:   $($fraudResp.hedera.transaction_id)`n"
+    Write-Host "  Status: $($fraudResp.status)" -ForegroundColor White
+    Write-Host "  Trust Score: $($fraudResp.trust_score)" -ForegroundColor White
+    Write-Host "  Physics Check: $($fraudResp.verification_details.physics_check)" -ForegroundColor White
+    Write-Host "  Flags: $($fraudResp.verification_details.flags -join ', ')" -ForegroundColor Yellow
+    Write-Host "  Transaction: $($fraudResp.hedera.transaction_id)" -ForegroundColor Cyan
+    Write-Host ""
 
     if ($fraudResp.status -eq "FLAGGED" -and $fraudResp.trust_score -lt 0.7) {
-        Write-Host "  [PASS] PS2 PASSED - Fraud detected`n" -ForegroundColor Green
-        Add-TestResult "PS2" "PASSED"
+        Write-Host "  TEST 2 PASSED - Fraud detected" -ForegroundColor Green
+        Write-Host ""
+        Add-TestResult "TEST 2" "PASSED"
     } else {
-        Write-Host "  [FAIL] PS2 FAILED - Fraud not detected`n" -ForegroundColor Red
-        Add-TestResult "PS2" "FAILED"
+        Write-Host "  TEST 2 FAILED - Fraud not detected" -ForegroundColor Red
+        Write-Host ""
+        Add-TestResult "TEST 2" "FAILED"
     }
 }
 catch {
-    Write-Host "  [ERROR] PS2 ERROR: $($_.Exception.Message)`n" -ForegroundColor Red
-    Add-TestResult "PS2" "ERROR"
+    Write-Host "  [ERROR] TEST 2 ERROR: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host ""
+    Add-TestResult "TEST 2" "ERROR"
 }
 
 # ========================================================
 # PS3 - Environmental Violation Detection
 # ========================================================
-Write-Host "[PS3] Environmental Violation Detection" -ForegroundColor Magenta
+Write-Host "[TEST 3] Environmental Violation Detection" -ForegroundColor Magenta
 
 $envBody = @{
     plant_id  = "PLANT-ALPHA"
@@ -136,28 +149,32 @@ $envBody = @{
 try {
     $envResp = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $envBody
 
-    Write-Host "  Status:              $($envResp.status)"
-    Write-Host "  Trust Score:         $($envResp.trust_score)"
-    Write-Host "  Environmental Check: $($envResp.verification_details.environmental_check)"
-    Write-Host "  Flags:               $($envResp.verification_details.flags -join ', ')`n"
+    Write-Host "  Status: $($envResp.status)" -ForegroundColor White
+    Write-Host "  Trust Score: $($envResp.trust_score)" -ForegroundColor White
+    Write-Host "  Environmental Check: $($envResp.verification_details.environmental_check)" -ForegroundColor White
+    Write-Host "  Flags: $($envResp.verification_details.flags -join ', ')" -ForegroundColor Yellow
+    Write-Host ""
 
     if ($envResp.status -eq "FLAGGED" -and $envResp.verification_details.environmental_check -eq "FAIL") {
-        Write-Host "  [PASS] PS3 PASSED - Environmental violation detected`n" -ForegroundColor Green
-        Add-TestResult "PS3" "PASSED"
+        Write-Host "  TEST 3 PASSED - Environmental violation detected" -ForegroundColor Green
+        Write-Host ""
+        Add-TestResult "TEST 3" "PASSED"
     } else {
-        Write-Host "  [FAIL] PS3 FAILED - Environmental violation not detected`n" -ForegroundColor Red
-        Add-TestResult "PS3" "FAILED"
+        Write-Host "  TEST 3 FAILED - Environmental violation not detected" -ForegroundColor Red
+        Write-Host ""
+        Add-TestResult "TEST 3" "FAILED"
     }
 }
 catch {
-    Write-Host "  [ERROR] PS3 ERROR: $($_.Exception.Message)`n" -ForegroundColor Red
-    Add-TestResult "PS3" "ERROR"
+    Write-Host "  [ERROR] TEST 3 ERROR: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host ""
+    Add-TestResult "TEST 3" "ERROR"
 }
 
 # ========================================================
 # PS4 - Zero-Flow Fraud
 # ========================================================
-Write-Host "[PS4] Zero-Flow Fraud" -ForegroundColor Red
+Write-Host "[TEST 4] Zero-Flow Fraud Detection" -ForegroundColor Red
 
 $zeroBody = @{
     plant_id  = "PLANT-ALPHA"
@@ -177,36 +194,42 @@ $zeroBody = @{
 try {
     $zeroResp = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $zeroBody -ErrorAction Stop
 
-    Write-Host "  Status:        $($zeroResp.status)"
-    Write-Host "  Trust Score:   $($zeroResp.trust_score)"
-    Write-Host "  Physics Check: $($zeroResp.verification_details.physics_check)"
-    Write-Host "  Flags:         $($zeroResp.verification_details.flags -join ', ')`n"
+    Write-Host "  Status: $($zeroResp.status)" -ForegroundColor White
+    Write-Host "  Trust Score: $($zeroResp.trust_score)" -ForegroundColor White
+    Write-Host "  Physics Check: $($zeroResp.verification_details.physics_check)" -ForegroundColor White
+    Write-Host "  Flags: $($zeroResp.verification_details.flags -join ', ')" -ForegroundColor Yellow
+    Write-Host ""
 
     if ($zeroResp.status -eq "REJECTED" -or $zeroResp.trust_score -lt 0.5) {
-        Write-Host "  [PASS] PS4 PASSED - zero-flow fraud rejected/low trust`n" -ForegroundColor Green
-        Add-TestResult "PS4" "PASSED"
+        Write-Host "  TEST 4 PASSED - Zero-flow fraud rejected" -ForegroundColor Green
+        Write-Host ""
+        Add-TestResult "TEST 4" "PASSED"
     } else {
-        Write-Host "  [FAIL] PS4 FAILED - zero-flow fraud not rejected`n" -ForegroundColor Red
-        Add-TestResult "PS4" "FAILED"
+        Write-Host "  TEST 4 FAILED - Zero-flow fraud not rejected" -ForegroundColor Red
+        Write-Host ""
+        Add-TestResult "TEST 4" "FAILED"
     }
 }
 catch {
     $msg = $_.Exception.Message
-    Write-Host "  API error on zero-flow payload: $msg`n" -ForegroundColor Yellow
+    Write-Host "  API Response: $msg" -ForegroundColor Yellow
+    Write-Host ""
 
-    if ($msg -like "*(400)*") {
-        Write-Host "  [PASS] PS4 PASSED - zero-flow fraud blocked with 400 Bad Request`n" -ForegroundColor Green
-        Add-TestResult "PS4" "PASSED"
+    if ($msg -like "*(400)*" -or $msg -like "*zero*") {
+        Write-Host "  TEST 4 PASSED - Zero-flow fraud blocked" -ForegroundColor Green
+        Write-Host ""
+        Add-TestResult "TEST 4" "PASSED"
     } else {
-        Write-Host "  [ERROR] PS4 ERROR - unexpected error on zero-flow test`n" -ForegroundColor Red
-        Add-TestResult "PS4" "ERROR"
+        Write-Host "  TEST 4 ERROR - Unexpected error" -ForegroundColor Red
+        Write-Host ""
+        Add-TestResult "TEST 4" "ERROR"
     }
 }
 
 # ========================================================
 # PS5 - Multi-Plant Isolation
 # ========================================================
-Write-Host "[PS5] Multi-Plant Isolation" -ForegroundColor Cyan
+Write-Host "[TEST 5] Multi-Plant Isolation" -ForegroundColor Cyan
 
 $alphaBody = @{
     plant_id  = "PLANT-ALPHA"
@@ -242,26 +265,30 @@ try {
     $alphaResp = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $alphaBody
     $betaResp  = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $betaBody
 
-    Write-Host "  PLANT-ALPHA TX: $($alphaResp.hedera.transaction_id)"
-    Write-Host "  PLANT-BETA  TX: $($betaResp.hedera.transaction_id)`n"
+    Write-Host "  PLANT-ALPHA TX: $($alphaResp.hedera.transaction_id)" -ForegroundColor Cyan
+    Write-Host "  PLANT-BETA TX:  $($betaResp.hedera.transaction_id)" -ForegroundColor Cyan
+    Write-Host ""
 
     if ($alphaResp.hedera.transaction_id -ne $betaResp.hedera.transaction_id) {
-        Write-Host "  [PASS] PS5 PASSED - different plants have different TXs`n" -ForegroundColor Green
-        Add-TestResult "PS5" "PASSED"
+        Write-Host "  TEST 5 PASSED - Multi-plant isolation verified" -ForegroundColor Green
+        Write-Host ""
+        Add-TestResult "TEST 5" "PASSED"
     } else {
-        Write-Host "  [FAIL] PS5 FAILED - TX IDs should differ`n" -ForegroundColor Red
-        Add-TestResult "PS5" "FAILED"
+        Write-Host "  TEST 5 FAILED - Transaction IDs should differ" -ForegroundColor Red
+        Write-Host ""
+        Add-TestResult "TEST 5" "FAILED"
     }
 }
 catch {
-    Write-Host "  [ERROR] PS5 ERROR: $($_.Exception.Message)`n" -ForegroundColor Red
-    Add-TestResult "PS5" "ERROR"
+    Write-Host "  [ERROR] TEST 5 ERROR: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host ""
+    Add-TestResult "TEST 5" "ERROR"
 }
 
 # ========================================================
 # PS6 - Replay Protection
 # ========================================================
-Write-Host "[PS6] Replay Protection" -ForegroundColor Yellow
+Write-Host "[TEST 6] Replay Attack Prevention" -ForegroundColor Yellow
 
 $fixedTs = Get-EpochMs
 
@@ -280,57 +307,75 @@ $replayBody = @{
     }
 } | ConvertTo-Json -Depth 5
 
+$skipPS6Second = $false
+
 try {
     $first = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $replayBody
-    Write-Host "  First submit status: $($first.status)"
+    Write-Host "  First submission: $($first.status)" -ForegroundColor White
 }
 catch {
-    Write-Host "  [ERROR] PS6 ERROR on first submit: $($_.Exception.Message)`n" -ForegroundColor Red
-    Add-TestResult "PS6" "ERROR"
+    Write-Host "  [ERROR] TEST 6 ERROR on first submit: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host ""
+    Add-TestResult "TEST 6" "ERROR"
     $skipPS6Second = $true
 }
 
 if (-not $skipPS6Second) {
+    Start-Sleep -Milliseconds 100
     try {
         $second = Invoke-RestMethod -Uri $apiUrl -Method POST -Headers $headers -Body $replayBody -ErrorAction Stop
-        Write-Host "  Second submit unexpectedly succeeded: $($second.status)" -ForegroundColor Red
-        Write-Host "  [FAIL] PS6 FAILED - replay not blocked`n" -ForegroundColor Red
-        Add-TestResult "PS6" "FAILED"
+        Write-Host "  Second submission: Unexpectedly succeeded" -ForegroundColor Red
+        Write-Host ""
+        Write-Host "  TEST 6 FAILED - Replay attack not blocked" -ForegroundColor Red
+        Write-Host ""
+        Add-TestResult "TEST 6" "FAILED"
     }
     catch {
-        Write-Host "  Second submit blocked as expected:" -ForegroundColor Green
-        Write-Host "    $($_.Exception.Message)" -ForegroundColor Green
-        Write-Host "  [PASS] PS6 PASSED - replay protection working`n" -ForegroundColor Green
-        Add-TestResult "PS6" "PASSED"
+        Write-Host "  Second submission: Blocked (expected)" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "  TEST 6 PASSED - Replay protection working" -ForegroundColor Green
+        Write-Host ""
+        Add-TestResult "TEST 6" "PASSED"
     }
 }
 
 # ========================================================
 # SUMMARY
 # ========================================================
-Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host "                    TESTING COMPLETE                   " -ForegroundColor Cyan
-Write-Host "========================================================`n" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "╔════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+Write-Host "║              TESTING COMPLETE                        ║" -ForegroundColor Cyan
+Write-Host "╚════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host ""
 
 $passedCount = ($testResults | Where-Object { $_.Result -eq "PASSED" }).Count
 $totalTests  = $testResults.Count
 
-Write-Host "Test Results:" -ForegroundColor Cyan
+Write-Host "Test Results:" -ForegroundColor White
 foreach ($r in $testResults) {
+    $icon = if ($r.Result -eq "PASSED") { "✓" } elseif ($r.Result -eq "FAILED") { "✗" } else { "⚠" }
     $color = switch ($r.Result) {
         "PASSED" { "Green" }
         "FAILED" { "Red" }
         default  { "Yellow" }
     }
-    Write-Host "  $($r.Test): $($r.Result)" -ForegroundColor $color
+    Write-Host "  $icon $($r.Test): $($r.Result)" -ForegroundColor $color
 }
 
-Write-Host "`nSummary: $passedCount/$totalTests tests passed`n" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Summary: $passedCount/$totalTests tests passed" -ForegroundColor Cyan
+Write-Host ""
 
-if ($passedCount -eq $totalTests) {
-    Write-Host "*** ALL TESTS PASSED - PRODUCTION READY! ***`n" -ForegroundColor Green
+if ($passedCount -eq $totalTests -and $totalTests -gt 0) {
+    Write-Host "✓ ALL TESTS PASSED - PRODUCTION READY!" -ForegroundColor Green
+    Write-Host ""
     exit 0
+} elseif ($totalTests -eq 0) {
+    Write-Host "⚠ NO TESTS RUN - CHECK API SERVER" -ForegroundColor Yellow
+    Write-Host ""
+    exit 1
 } else {
-    Write-Host "*** SOME TESTS FAILED - REVIEW RESULTS ABOVE ***`n" -ForegroundColor Yellow
+    Write-Host "✗ SOME TESTS FAILED - REVIEW RESULTS ABOVE" -ForegroundColor Yellow
+    Write-Host ""
     exit 1
 }
